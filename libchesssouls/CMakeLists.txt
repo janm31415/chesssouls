@@ -13,6 +13,7 @@ endif (UNIX)
 
 set(HDRS
 bitboard.h
+hash.h
 libchesssouls_api.h
 notation.h
 position.h
@@ -21,6 +22,7 @@ types.h
 	
 set(SRCS
 bitboard.cpp
+hash.cpp
 notation.cpp
 position.cpp
 )

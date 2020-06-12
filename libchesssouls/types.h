@@ -8,7 +8,7 @@ typedef uint64_t bitboard;
 #define nr_files 8
 #define nr_ranks 8
 #define nr_piecetype 7
-#define nr_color 3
+#define nr_color 2
 
 enum e_square
   {
@@ -47,7 +47,7 @@ enum e_piece
 
 enum e_color
   {
-  white, black, no_color, color_end
+  white, black, color_end
   };
 
 #define ENABLE_BASE_OPERATORS_ON(T)                                         \
