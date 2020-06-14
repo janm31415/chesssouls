@@ -22,6 +22,7 @@ class position
     void remove_piece(e_square s, e_color c, e_piecetype pt);
     bool empty(e_square s) const;
     e_piece piece_on(e_square s) const;
+    e_piece moved_piece(move m) const;
 
     e_color side_to_move() const { return _side_to_move; }
 
@@ -30,6 +31,7 @@ class position
     bitboard pieces(e_piecetype pt) const;
     bitboard pieces(e_piecetype pt1, e_piecetype pt2) const;
     bitboard pieces(e_color c, e_piecetype pt) const;
+    bitboard pieces(e_color c, e_piecetype pt1, e_piecetype pt2) const;
 
     e_square ep_square() const { return ep; }
 
@@ -77,6 +79,16 @@ class position
       {
       return _checkers;
       }
+
+    bitboard pinned_pieces(e_color c) const
+      {
+      return _check_blockers(c, c);
+      }
+
+    bool legal(move m, bitboard pinned) const;
+
+  private:
+    bitboard _check_blockers(e_color c, e_color king_color) const;
 
   private:
     e_piece board[nr_squares];

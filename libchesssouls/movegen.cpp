@@ -84,7 +84,9 @@ namespace
     bitboard pawns_on_7 = pos.pieces(my_color, pawn) & rank7bb;
     bitboard pawns_not_on_7 = pos.pieces(my_color, pawn) & ~rank7bb;
 
-    bitboard enemies = T == captures ? target : pos.pieces(other_color);
+    bitboard enemies =
+      T == evasions ? pos.pieces(other_color) & target :
+      T == captures ? target : pos.pieces(other_color);
 
     bitboard empty_squares, b1, b2;
 
@@ -94,6 +96,12 @@ namespace
       empty_squares = (T == quiet ? target : ~pos.pieces());
       b1 = shift_bb<up>(pawns_not_on_7) & empty_squares;
       b2 = shift_bb<up>(b1 & rank3bb) & empty_squares;
+
+      if (T == evasions) // Consider only blocking squares
+        {
+        b1 &= target;
+        b2 &= target;
+        }
 
       while (b1)
         {
@@ -110,10 +118,13 @@ namespace
       }
 
     // promotions
-    if (pawns_on_7 && (target & rank8bb))
+    if (pawns_on_7 && (T != evasions || (target & rank8bb)))
       {
       if (T == captures)
         empty_squares = ~pos.pieces();
+
+      if (T == evasions)
+        empty_squares &= target;
 
       mlist = generate_promotions<T, right>(mlist, pawns_on_7, enemies);
       mlist = generate_promotions<T, left>(mlist, pawns_on_7, enemies);
@@ -141,6 +152,12 @@ namespace
       if (pos.ep_square() != sq_none)
         {
         assert(rank_of(pos.ep_square()) == relative_rank(my_color, rank_6));
+
+        // An en passant capture can be an evasion only if the checking piece
+        // is the double pushed pawn and so is in the target. Otherwise this
+        // is a discovery check and we are forced to do otherwise.
+        if (T == evasions && !(target & (pos.ep_square() - up)))
+          return mlist;
 
         b1 = pawns_not_on_7 & attacks_from_pawn(pos.ep_square(), other_color);
 
@@ -179,17 +196,21 @@ namespace
     mlist = generate_moves<rook>(pos, mlist, my_color, target);
     mlist = generate_moves<queen>(pos, mlist, my_color, target);
 
-    e_square ksq = pos.king_square(my_color);
-    bitboard b = pos.attacks_from<king>(ksq) & target;
-    while (b)
-      *mlist++ = make_move(ksq, pop_least_significant_bit(b));
-
-    if (pos.can_castle(my_color))
+    if (T != evasions)
       {
-      mlist = generate_castling_kingside(pos, mlist, my_color);
-      mlist = generate_castling_queenside(pos, mlist, my_color);
+      e_square ksq = pos.king_square(my_color);
+      bitboard b = pos.attacks_from<king>(ksq) & target;
+      while (b)
+        *mlist++ = make_move(ksq, pop_least_significant_bit(b));
       }
-
+    if (T != evasions && T != captures)
+      {
+      if (pos.can_castle(my_color))
+        {
+        mlist = generate_castling_kingside(pos, mlist, my_color);
+        mlist = generate_castling_queenside(pos, mlist, my_color);
+        }
+      }
     return mlist;
     }
 
@@ -203,18 +224,73 @@ move* generate(const position& pos, move* mlist)
   bitboard target =
     T == captures ? pos.pieces(~my_color)
     : T == quiet ? ~pos.pieces()
-    : T == pseudolegal ? ~pos.pieces(my_color) : 0;
+    : T == non_evasions ? ~pos.pieces(my_color) : 0;
 
   return my_color == white ?
     generate_all<white, T>(pos, mlist, target)
     : generate_all<black, T>(pos, mlist, target);
   }
 
+/*
+We are in check. Generate all pseudo-legal check evasions.
+*/
+template <>
+move* generate<evasions>(const position& pos, move* mlist)
+  {
+  assert(pos.checkers());
 
+  e_color my_color = pos.side_to_move();
+  e_square ksq = pos.king_square(my_color);
+  bitboard slider_attacks = 0;
+  bitboard sliders = pos.checkers() & ~pos.pieces(knight, pawn);
+  /*
+  sliders are queen, rooks, or bishops that checked us.
+  All squares from the king to this slider cannot be used.
+  */
+  while (sliders)
+    {
+    e_square square_in_check = pop_least_significant_bit(sliders);
+    slider_attacks |= line[square_in_check][ksq] ^ square_in_check;
+    }
 
+  bitboard b = pos.attacks_from<king>(ksq) & ~pos.pieces(my_color) & ~slider_attacks;
+  while (b)
+    *mlist++ = make_move(ksq, pop_least_significant_bit(b));
 
+  if (more_than_one(pos.checkers()))
+    return mlist; // double check, only a king move can save the day
+
+  // Generate blocking evasions or captures of the checking piece
+  e_square checksq = least_significant_bit(pos.checkers());
+  bitboard target = between[checksq][ksq] | checksq;
+  return my_color == white ?
+    generate_all<white, evasions>(pos, mlist, target)
+    : generate_all<black, evasions>(pos, mlist, target);
+  }
+
+template <>
+move* generate<legal>(const position& pos, move* mlist)
+  {  
+  move* current = mlist;
+
+  move* end = pos.checkers() ? generate<evasions>(pos, mlist)
+    : generate<non_evasions>(pos, mlist);
+
+  e_square ksq = pos.king_square(pos.side_to_move());
+  bitboard pinned = pos.pinned_pieces(pos.side_to_move());
+
+  while (current != end)
+    {
+    if ((pinned || from_square(*current) == ksq || type_of(*current) == enpassant)
+      && !pos.legal(*current, pinned))
+      *current = *(--end);
+    else
+      ++current;
+    }
+  return end;
+  }
 
 // explicit template instantiation
-template move* generate<pseudolegal>(const position& pos, move* mlist);
+template move* generate<non_evasions>(const position& pos, move* mlist);
 template move* generate<quiet>(const position& pos, move* mlist);
 template move* generate<captures>(const position& pos, move* mlist);

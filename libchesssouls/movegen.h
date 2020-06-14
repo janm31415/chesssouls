@@ -8,8 +8,10 @@ class position;
 enum e_movegentype
   {
   captures,  
-  pseudolegal,
-  quiet
+  non_evasions,
+  quiet,
+  evasions,
+  legal
   };
 
 template <e_movegentype T>

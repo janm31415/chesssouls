@@ -202,6 +202,10 @@ e_piece position::piece_on(e_square s) const
   return board[s];
   }
 
+e_piece position::moved_piece(move m) const
+  {
+  return board[from_square(m)];
+  }
 
 bitboard position::pieces() const
   {
@@ -228,6 +232,11 @@ bitboard position::pieces(e_color c, e_piecetype pt) const
   return bb_by_color[c] & bb_by_type[pt];
   }
 
+bitboard position::pieces(e_color c, e_piecetype pt1, e_piecetype pt2) const
+  {
+  return bb_by_color[c] & (bb_by_type[pt1] | bb_by_type[pt2]);
+  }
+
 bitboard position::attackers_to(e_square s) const
   {
   return attackers_to(s, bb_by_type[all_pieces]);
@@ -246,4 +255,71 @@ bitboard position::attackers_to(e_square s, bitboard occ) const
 void position::compute_checkers()
   {
   _checkers = attackers_to(king_square(_side_to_move)) & pieces(~_side_to_move);
+  }
+
+/// position::check_blockers() returns a bitboard of all the pieces with color
+/// 'c' that are blocking check on the king with color 'kingColor'. A piece
+/// blocks a check if removing that piece from the board would result in a
+/// position where the king is in check. A check blocking piece can be either a
+/// pinned or a discovered check piece, according if its color 'c' is the same
+/// or the opposite of 'kingColor'.
+
+bitboard position::_check_blockers(e_color c, e_color king_color) const
+  {
+  bitboard b, pinners, result = 0;
+  e_square ksq = king_square(king_color);
+
+  // Pinners are sliders that give check when a pinned piece is removed
+  pinners = ((pieces(rook, queen) & pseudo_attack[rook][ksq])
+           | (pieces(bishop, queen) & pseudo_attack[bishop][ksq])) & pieces(~king_color);
+  
+  while (pinners)
+    {
+    b = between[ksq][pop_least_significant_bit(pinners)] & pieces();
+
+    if (!more_than_one(b))
+      result |= b & pieces(c);
+    }
+  return result;
+  }
+
+bool position::legal(move m, bitboard pinned) const
+  {
+  assert(is_ok(m));
+  assert(pinned == pinned_pieces(side_to_move()));
+  e_color my_color = _side_to_move;
+  e_square from = from_square(m);
+  assert(color_of(moved_piece(m)) == my_color);
+  assert(piece_on(king_square(my_color)) == make_piece(my_color, king));
+
+  // En passant captures are a tricky special case. Because they are rather
+  // uncommon, we do it simply by testing whether the king is attacked after
+  // the move is made.
+  if (type_of(m) == enpassant)
+    {
+    e_square ksq = king_square(my_color);
+    e_square to = to_square(m);
+    e_square capsq = to - (my_color == white ? sq_delta_up : sq_delta_down);
+    bitboard occ = (pieces() ^ from ^ capsq) | to;
+
+    assert(to == ep_square());
+    assert(moved_piece(m) == make_piece(my_color, pawn));
+    assert(piece_on(capsq) == make_piece(~my_color, pawn));
+    assert(piece_on(to) == no_piece);
+
+    return !(attacks_from_rook(ksq, occ) & pieces(~my_color, queen, rook))
+      && !(attacks_from_bishop(ksq, occ) & pieces(~my_color, queen, bishop));
+    }
+
+  // If the moving piece is a king, check whether the destination
+  // square is attacked by the opponent. Castling moves are checked
+  // for legality during move generation.
+  if (type_of(piece_on(from)) == king)
+    return type_of(m) == castling || !(attackers_to(to_square(m)) & pieces(~my_color));
+
+  // A non-king move is legal if and only if it is not pinned or it
+  // is moving along the ray towards or away from the king.
+  return   !pinned
+    || !(pinned & from)
+    || aligned(from, to_square(m), king_square(my_color));
   }

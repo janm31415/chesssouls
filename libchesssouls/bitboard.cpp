@@ -11,8 +11,10 @@ bitboard adjacent_files[nr_files];
 bitboard step_attacks[nr_pieces][nr_squares];
 int square_distance_table[nr_squares][nr_squares];
 bitboard ray_attack[8][nr_squares];
-
+bitboard line[nr_squares][nr_squares];
+bitboard between[nr_squares][nr_squares];
 bitboard castling_path[9];
+bitboard pseudo_attack[nr_piecetype][nr_squares];
 
 namespace
   {
@@ -123,6 +125,18 @@ void init_bitboards()
   castling_path[4] = square[sq_f8] | square[sq_g8];
   castling_path[8] = square[sq_b8] | square[sq_c8] | square[sq_d8];
 
+  for (e_square s1 = sq_a1; s1 <= sq_h8; ++s1)
+    {
+    pseudo_attack[bishop][s1] = attacks_from_bishop(s1, 0);
+    pseudo_attack[queen][s1] = pseudo_attack[bishop][s1];
+    pseudo_attack[rook][s1] = attacks_from_rook(s1, 0);
+    pseudo_attack[queen][s1] |= pseudo_attack[rook][s1];
+    for (e_square s2 = sq_a1; s2 <= sq_h8; ++s2)
+      {      
+      line[s1][s2] = (attacks_from_rook(s1, 0) & attacks_from_rook(s2, 0)) | (attacks_from_bishop(s1, 0) & attacks_from_bishop(s2, 0)) | s1 | s2;
+      between[s1][s2] = (attacks_from_rook(s1, square[s2]) & attacks_from_rook(s2, square[s1])) | (attacks_from_bishop(s1, square[s2]) & attacks_from_bishop(s2, square[s1]));
+      }
+    }
   }
 
 

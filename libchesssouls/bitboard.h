@@ -45,8 +45,10 @@ extern bitboard step_attacks[nr_pieces][nr_squares];
 extern int square_distance_table[nr_squares][nr_squares];
 
 extern bitboard ray_attack[8][nr_squares];
-
+extern bitboard line[nr_squares][nr_squares];
+extern bitboard between[nr_squares][nr_squares];
 extern bitboard castling_path[9];
+extern bitboard pseudo_attack[nr_piecetype][nr_squares];
 
 LIB_CHESSSOULS_API void init_bitboards();
 
@@ -162,4 +164,9 @@ inline bitboard rank_bb(e_square s)
 inline bitboard file_bb(e_square s)
   {
   return file[file_of(s)];
+  }
+
+inline bool aligned(e_square s1, e_square s2, e_square s3) 
+  {
+  return line[s1][s2] & s3;
   }
