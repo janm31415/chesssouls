@@ -2,11 +2,15 @@
 #include "test_movegen.h"
 #include "test_position.h"
 
+#include <libchesssouls/bitboard.h>
+
 #include <ctime>
 
 int main(int /*argc*/, const char* /*argv*/[])
   {
   InitTestEngine();
+
+  init_bitboards();
 
   auto tic = std::clock();
   run_all_movegen_tests();

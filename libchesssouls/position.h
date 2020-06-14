@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types.h"
+#include "bitboard.h"
 #include "libchesssouls_api.h"
 
 #include <string>
@@ -27,6 +28,7 @@ class position
     bitboard pieces() const;
     bitboard pieces(e_color c) const;
     bitboard pieces(e_piecetype pt) const;
+    bitboard pieces(e_piecetype pt1, e_piecetype pt2) const;
     bitboard pieces(e_color c, e_piecetype pt) const;
 
     e_square ep_square() const { return ep; }
@@ -37,16 +39,56 @@ class position
     template <e_piecetype Pt>
     bitboard attacks_from(e_square s) const;
 
+    bitboard attackers_to(e_square s) const;
+    bitboard attackers_to(e_square s, bitboard occ) const;
+
+    e_square king_square(e_color c) const 
+      {
+      return piece_list[c][king][0];
+      }
+
+    int can_castle(e_color c) const
+      {
+      /*
+      color = 0 => castle & 1 or castle & 2  => castle & 3
+      color = 1 => castle & 4 or castle & 8  => castle & 12
+      */
+      return _castle & (3 << (c * 2));
+      }
+
+    int can_castle_kingside(e_color c) const
+      {
+      return _castle & (1 << (c * 2));
+      }
+
+    int can_castle_queenside(e_color c) const
+      {
+      return _castle & (2 << (c * 2));
+      }
+
+    bool castling_path_obstructed(int castle) const
+      {
+      return bb_by_type[all_pieces] & castling_path[castle];
+      }
+
+    void compute_checkers();
+
+    bitboard checkers() const
+      {
+      return _checkers;
+      }
+
   private:
     e_piece board[nr_squares];
     bitboard bb_by_type[nr_piecetype];
     bitboard bb_by_color[nr_color];
+    bitboard _checkers;
     int piece_count[nr_color][nr_piecetype];
     e_square piece_list[nr_color][nr_piecetype][16];
     int index[nr_squares];
 
     e_color _side_to_move;
-    uint8_t castle;
+    uint8_t _castle;
     e_square ep;
     int rule50;
     int game_ply;
@@ -59,9 +101,25 @@ const e_square* position::list(e_color c) const
   }
 
 template <e_piecetype Pt>
-bitboard position::attacks_from(e_square s) const
+inline bitboard position::attacks_from(e_square s) const
   {
-  return  Pt == bishop || Pt == rook ? attacks_bb<Pt>(s, bb_by_type[all_pieces])
-    : Pt == queen ? attacks_from<rook>(s) | attacks_from<bishop>(s)
-    : step_attacks[Pt][s];
+  return step_attacks[Pt][s];
+  }
+
+template <>
+inline bitboard position::attacks_from<bishop>(e_square s) const
+  {
+  return attacks_from_bishop(s, bb_by_type[all_pieces]);
+  }
+
+template <>
+inline bitboard position::attacks_from<rook>(e_square s) const
+  {
+  return attacks_from_rook(s, bb_by_type[all_pieces]);
+  }
+
+template <>
+inline bitboard position::attacks_from<queen>(e_square s) const
+  {
+  return attacks_from_bishop(s, bb_by_type[all_pieces]) | attacks_from_rook(s, bb_by_type[all_pieces]);
   }

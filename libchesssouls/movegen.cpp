@@ -6,6 +6,46 @@
 namespace
   {
 
+  move* generate_castling_kingside(const position& pos, move* mlist, e_color my_color)
+    {
+    assert(!pos.checkers());
+    if (!pos.can_castle_kingside(my_color))
+      return mlist;
+    if (pos.castling_path_obstructed(1 << (my_color * 2)))
+      return mlist;
+    e_square kfrom = pos.king_square(my_color);
+    e_square kto = relative_square(my_color, sq_g1);
+    bitboard enemies = pos.pieces(~my_color);
+    for (e_square s = kto; s != kfrom; s += sq_delta_left)
+      {
+      if (pos.attackers_to(s) & enemies)
+        return mlist;
+      }
+
+    *mlist++ = make<castling>(kfrom, kto);
+    return mlist;
+    }
+
+  move* generate_castling_queenside(const position& pos, move* mlist, e_color my_color)
+    {
+    assert(!pos.checkers());
+    if (!pos.can_castle_queenside(my_color))
+      return mlist;
+    if (pos.castling_path_obstructed(2 << (my_color * 2)))
+      return mlist;
+    e_square kfrom = pos.king_square(my_color);
+    e_square kto = relative_square(my_color, sq_c1);
+    bitboard enemies = pos.pieces(~my_color);
+    for (e_square s = kto; s != kfrom; s += sq_delta_right)
+      {
+      if (pos.attackers_to(s) & enemies)
+        return mlist;
+      }
+
+    *mlist++ = make<castling>(kfrom, kto);
+    return mlist;
+    }
+
   template <e_movegentype T, e_square delta>
   move* generate_promotions(move* mlist, bitboard pawns_on_7, bitboard target)
     {
@@ -138,6 +178,18 @@ namespace
     mlist = generate_moves<bishop>(pos, mlist, my_color, target);
     mlist = generate_moves<rook>(pos, mlist, my_color, target);
     mlist = generate_moves<queen>(pos, mlist, my_color, target);
+
+    e_square ksq = pos.king_square(my_color);
+    bitboard b = pos.attacks_from<king>(ksq) & target;
+    while (b)
+      *mlist++ = make_move(ksq, pop_least_significant_bit(b));
+
+    if (pos.can_castle(my_color))
+      {
+      mlist = generate_castling_kingside(pos, mlist, my_color);
+      mlist = generate_castling_queenside(pos, mlist, my_color);
+      }
+
     return mlist;
     }
 
@@ -155,7 +207,7 @@ move* generate(const position& pos, move* mlist)
 
   return my_color == white ?
     generate_all<white, T>(pos, mlist, target)
-    : generate_all<black, T>(pos, mlist, target);  
+    : generate_all<black, T>(pos, mlist, target);
   }
 
 

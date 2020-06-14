@@ -44,15 +44,9 @@ extern bitboard adjacent_files[nr_files];
 extern bitboard step_attacks[nr_pieces][nr_squares];
 extern int square_distance_table[nr_squares][nr_squares];
 
-extern bitboard rook_masks[nr_squares];
-extern bitboard rook_magics[nr_squares];
-extern bitboard* rook_attacks[nr_squares];
-extern unsigned rook_shifts[nr_squares];
+extern bitboard ray_attack[8][nr_squares];
 
-extern bitboard bishop_masks[nr_squares];
-extern bitboard bishop_magics[nr_squares];
-extern bitboard* bishop_attacks[nr_squares];
-extern unsigned bishop_shifts[nr_squares];
+extern bitboard castling_path[9];
 
 LIB_CHESSSOULS_API void init_bitboards();
 
@@ -71,12 +65,12 @@ inline bitboard operator ^ (bitboard b, e_square s)
   return b ^ square[s];
   }
 
-inline bitboard& operator |= (bitboard b, e_square s)
+inline bitboard& operator |= (bitboard& b, e_square s)
   {
   return b |= square[s];
   }
 
-inline bitboard& operator ^= (bitboard b, e_square s)
+inline bitboard& operator ^= (bitboard& b, e_square s)
   {
   return b ^= square[s];
   }
@@ -96,6 +90,7 @@ inline bitboard shift_bb(bitboard b)
     : 0;
   }
 
+e_square most_significant_bit(bitboard b);
 e_square least_significant_bit(bitboard b);
 e_square pop_least_significant_bit(bitboard& b);
 
@@ -119,23 +114,44 @@ inline bitboard attacks_from_pawn(e_square s, e_color c)
   return step_attacks[make_piece(c, pawn)][s];
   }
 
-/// Functions for computing sliding attack bitboards. Function attacks() takes
-/// a square and a bitboard of occupied squares as input, and returns a bitboard
-/// representing all squares attacked by Pt (bishop or rook) on the given square.
-template<e_piecetype Pt>
-inline unsigned magic_index(e_square s, bitboard occ) {
-
-  bitboard* const masks = Pt == rook ? rook_masks : bishop_masks;
-  bitboard* const magics = Pt == rook ? rook_magics : bishop_magics;
-  unsigned* const shifts = Pt == rook ? rook_shifts : bishop_shifts;
-
-  return unsigned(((occ & masks[s]) * magics[s]) >> shifts[s]);
+inline bitboard attacks_positive_ray_direction(e_positive_ray dir, e_square s, bitboard occ)
+  {
+  bitboard attacks = ray_attack[dir][s];
+  bitboard blocker = attacks & occ;
+  if (blocker)
+    {
+    e_square sq = most_significant_bit(blocker);
+    attacks ^= ray_attack[dir][sq];
+    }
+  return attacks;
   }
 
-template<e_piecetype Pt>
-inline bitboard attacks_bb(e_square s, bitboard occ) 
+inline bitboard attacks_negative_ray_direction(e_negative_ray dir, e_square s, bitboard occ)
   {
-  return (Pt == rook ? rook_attacks : bishop_attacks)[s][magic_index<Pt>(s, occ)];
+  bitboard attacks = ray_attack[dir][s];
+  bitboard blocker = attacks & occ;
+  if (blocker)
+    {
+    e_square sq = least_significant_bit(blocker);
+    attacks ^= ray_attack[dir][sq];
+    }
+  return attacks;
+  }
+
+inline bitboard attacks_from_rook(e_square s, bitboard occ) 
+  {
+  return attacks_positive_ray_direction(north, s, occ) |
+    attacks_positive_ray_direction(east, s, occ) |
+    attacks_negative_ray_direction(south, s, occ) |
+    attacks_negative_ray_direction(west, s, occ);
+  } 
+
+inline bitboard attacks_from_bishop(e_square s, bitboard occ)
+  {
+  return attacks_positive_ray_direction(north_west, s, occ) |
+    attacks_positive_ray_direction(north_east, s, occ) |
+    attacks_negative_ray_direction(south_west, s, occ) |
+    attacks_negative_ray_direction(south_east, s, occ);
   }
 
 inline bitboard rank_bb(e_square s) 

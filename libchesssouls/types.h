@@ -90,6 +90,16 @@ inline e_color operator ~ (e_color c)
   return e_color(c^black);
   }
 
+enum e_positive_ray
+  {
+  north_west, north, north_east, east
+  };
+
+enum e_negative_ray
+  {
+  south_east=4,south, south_west, west
+  };
+
 #define ENABLE_BASE_OPERATORS_ON(T)                                         \
 inline T operator+(const T d1, const T d2) { return T(int(d1) + int(d2)); } \
 inline T operator-(const T d1, const T d2) { return T(int(d1) - int(d2)); } \
@@ -193,4 +203,9 @@ or the inverted rank when the input color is black.
 inline e_rank relative_rank(e_color c, e_rank r)
   {
   return e_rank(r ^ (c * 7));
+  }
+
+inline e_square relative_square(e_color c, e_square s)
+  {
+  return e_square(s ^ (c * 56));
   }

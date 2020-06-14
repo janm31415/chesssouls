@@ -96,16 +96,16 @@ void position::set_fen(const std::string& fen)
     switch (token)
       {
       case 'K':
-        castle |= 1;
+        _castle |= 1;
         break;
       case 'Q':
-        castle |= 2;
+        _castle |= 2;
         break;
       case 'k':
-        castle |= 4;
+        _castle |= 4;
         break;
       case 'q':
-        castle |= 8;
+        _castle |= 8;
         break;
       }
     }
@@ -122,6 +122,8 @@ void position::set_fen(const std::string& fen)
   ss >> std::skipws >> rule50 >> game_ply;
 
   game_ply = std::max(2 * (game_ply - 1), 0) + (_side_to_move == black);
+
+  compute_checkers();
   }
 
 std::string position::fen() const
@@ -149,15 +151,15 @@ std::string position::fen() const
 
   ss << (_side_to_move == white ? " w " : " b ");
 
-  if (castle & 1)
+  if (_castle & 1)
     ss << 'K';
-  if (castle & 2)
+  if (_castle & 2)
     ss << 'Q';
-  if (castle & 4)
+  if (_castle & 4)
     ss << 'k';
-  if (castle & 8)
+  if (_castle & 8)
     ss << 'q';
-  if (!(castle & 15))
+  if (!(_castle & 15))
     ss << '-';
 
   ss << (ep == sq_none ? " - " : " " + to_string(ep) + " ")
@@ -183,6 +185,10 @@ void position::remove_piece(e_square s, e_color c, e_piecetype pt)
   bb_by_type[all_pieces] ^= s;
   bb_by_type[pt] ^= s;
   bb_by_color[c] ^= s;
+  e_square last_square = piece_list[c][pt][--piece_count[c][pt]];
+  index[last_square] = index[s];
+  piece_list[c][pt][index[last_square]] = last_square;
+  piece_list[c][pt][piece_count[c][pt]] = sq_none;
   }
 
 bool position::empty(e_square s) const
@@ -212,7 +218,32 @@ bitboard position::pieces(e_piecetype pt) const
   return bb_by_type[pt];
   }
 
+bitboard position::pieces(e_piecetype pt1, e_piecetype pt2) const
+  {
+  return bb_by_type[pt1] | bb_by_type[pt2];
+  }
+
 bitboard position::pieces(e_color c, e_piecetype pt) const
   {
   return bb_by_color[c] & bb_by_type[pt];
+  }
+
+bitboard position::attackers_to(e_square s) const
+  {
+  return attackers_to(s, bb_by_type[all_pieces]);
+  }
+
+bitboard position::attackers_to(e_square s, bitboard occ) const
+  {
+  return  (attacks_from_pawn(s, black) & pieces(white, pawn))
+    | (attacks_from_pawn(s, white) & pieces(black, pawn))
+    | (attacks_from<knight>(s)      & pieces(knight))
+    | (attacks_from_rook(s, occ)     & pieces(rook, queen))
+    | (attacks_from_bishop(s, occ)   & pieces(bishop, queen))
+    | (attacks_from<king>(s)        & pieces(king));
+  }
+
+void position::compute_checkers()
+  {
+  _checkers = attackers_to(king_square(_side_to_move)) & pieces(~_side_to_move);
   }
