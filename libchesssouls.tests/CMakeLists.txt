@@ -1,11 +1,13 @@
 
 set(HDRS
 test_assert.h
+test_movegen.h
 test_position.h
     )
 	
 set(SRCS
 test_assert.cpp
+test_movegen.cpp
 test_position.cpp
 test.cpp
 )

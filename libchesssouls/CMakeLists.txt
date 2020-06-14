@@ -15,6 +15,7 @@ set(HDRS
 bitboard.h
 hash.h
 libchesssouls_api.h
+movegen.h
 notation.h
 position.h
 types.h
@@ -23,6 +24,8 @@ types.h
 set(SRCS
 bitboard.cpp
 hash.cpp
+rkiss.h
+movegen.cpp
 notation.cpp
 position.cpp
 )

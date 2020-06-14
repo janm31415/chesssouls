@@ -1,4 +1,5 @@
 #include "test_assert.h"
+#include "test_movegen.h"
 #include "test_position.h"
 
 #include <ctime>
@@ -8,6 +9,7 @@ int main(int /*argc*/, const char* /*argv*/[])
   InitTestEngine();
 
   auto tic = std::clock();
+  run_all_movegen_tests();
   run_all_position_tests();
   auto toc = std::clock();
 

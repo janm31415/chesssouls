@@ -87,7 +87,7 @@ void position::set_fen(const std::string& fen)
 
   // 2. Active color
   ss >> token;
-  side_to_move = (token == 'w' ? white : black);
+  _side_to_move = (token == 'w' ? white : black);
   ss >> token;
 
   // 3. Castling availability.
@@ -121,7 +121,7 @@ void position::set_fen(const std::string& fen)
   // 5-6. Halfmove clock and fullmove number
   ss >> std::skipws >> rule50 >> game_ply;
 
-  game_ply = std::max(2 * (game_ply - 1), 0) + (side_to_move == black);
+  game_ply = std::max(2 * (game_ply - 1), 0) + (_side_to_move == black);
   }
 
 std::string position::fen() const
@@ -147,7 +147,7 @@ std::string position::fen() const
       ss << '/';
     }
 
-  ss << (side_to_move == white ? " w " : " b ");
+  ss << (_side_to_move == white ? " w " : " b ");
 
   if (castle & 1)
     ss << 'K';
@@ -161,7 +161,7 @@ std::string position::fen() const
     ss << '-';
 
   ss << (ep == sq_none ? " - " : " " + to_string(ep) + " ")
-    << rule50 << " " << 1 + (game_ply - (side_to_move == black)) / 2;
+    << rule50 << " " << 1 + (game_ply - (_side_to_move == black)) / 2;
 
 
   return ss.str();
@@ -173,6 +173,8 @@ void position::put_piece(e_square s, e_color c, e_piecetype pt)
   bb_by_type[all_pieces] |= s;
   bb_by_type[pt] |= s;
   bb_by_color[c] |= s;
+  index[s] = piece_count[c][pt]++;
+  piece_list[c][pt][index[s]] = s;
   }
 
 void position::remove_piece(e_square s, e_color c, e_piecetype pt)
@@ -192,4 +194,25 @@ bool position::empty(e_square s) const
 e_piece position::piece_on(e_square s) const
   {
   return board[s];
+  }
+
+
+bitboard position::pieces() const
+  {
+  return bb_by_type[all_pieces];
+  }
+
+bitboard position::pieces(e_color c) const
+  {
+  return bb_by_color[c];
+  }
+
+bitboard position::pieces(e_piecetype pt) const
+  {
+  return bb_by_type[pt];
+  }
+
+bitboard position::pieces(e_color c, e_piecetype pt) const
+  {
+  return bb_by_color[c] & bb_by_type[pt];
   }

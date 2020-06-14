@@ -4,11 +4,36 @@
 
 typedef uint64_t bitboard;
 
+/*
+bit 0-5: destination square
+bit 6-11: source square
+bit 12-13: promotion piece type (knight-2==0 to queen-2==3)
+bit 14-15: special move flag:
+             normal (0) 
+             promotion (1)
+             en passant (2)
+             castling (3)
+*/
+typedef uint16_t move;
+
+constexpr move move_none = 0;
+constexpr move move_null = 65;
+
+enum e_movetype
+  {
+  normal = 0,
+  promotion = 1<<14,
+  enpassant = 2<<14,
+  castling = 3<<14
+  };
+
 #define nr_squares 64
 #define nr_files 8
 #define nr_ranks 8
 #define nr_piecetype 7
+#define nr_pieces 16
 #define nr_color 2
+#define max_moves 256
 
 enum e_square
   {
@@ -20,7 +45,17 @@ enum e_square
   sq_a6, sq_b6, sq_c6, sq_d6, sq_e6, sq_f6, sq_g6, sq_h6,
   sq_a7, sq_b7, sq_c7, sq_d7, sq_e7, sq_f7, sq_g7, sq_h7,
   sq_a8, sq_b8, sq_c8, sq_d8, sq_e8, sq_f8, sq_g8, sq_h8,
-  sq_end, sq_none
+  sq_end, sq_none,
+  sq_delta_up = 8,
+  sq_delta_down = -8,
+  sq_delta_left = -1,
+  sq_delta_right = 1,
+  sq_delta_up_up = 16,
+  sq_delta_down_down = -16,
+  sq_delta_up_left = 7,
+  sq_delta_up_right = 9,
+  sq_delta_down_left = -9,
+  sq_delta_down_right = -7
   };
 
 enum e_file
@@ -49,6 +84,11 @@ enum e_color
   {
   white, black, color_end
   };
+
+inline e_color operator ~ (e_color c)
+  {
+  return e_color(c^black);
+  }
 
 #define ENABLE_BASE_OPERATORS_ON(T)                                         \
 inline T operator+(const T d1, const T d2) { return T(int(d1) + int(d2)); } \
@@ -103,4 +143,54 @@ inline e_file file_of(e_square s)
 inline e_rank rank_of(e_square s) 
   {
   return e_rank(s >> 3);
+  }
+
+inline e_square from_square(move m)
+  {
+  return e_square((m >> 6) & 63);
+  }
+
+inline e_square to_square(move m)
+  {
+  return e_square(m & 63);
+  }
+
+inline e_movetype type_of(move m)
+  {
+  return e_movetype(m & (3 << 14));
+  }
+
+inline e_piecetype promotion_type(move m)
+  {
+  return e_piecetype(((m >> 12) & 3) + 2);
+  }
+
+inline move make_move(e_square from, e_square to)
+  {
+  return move(to | (from << 6));
+  }
+
+template <e_movetype T>
+inline move make(e_square from, e_square to, e_piecetype pt = knight)
+  {
+  return move(to | (from << 6) | T | ((pt - knight) << 12));
+  }
+
+inline bool is_ok(move m)
+  {
+  return from_square(m) != to_square(m);
+  }
+
+inline bool is_ok(e_square s)
+  {
+  return s >= sq_a1 && s <= sq_h8;
+  }
+
+/*
+Relative rank returns the input rank when the input color is white,
+or the inverted rank when the input color is black.
+*/
+inline e_rank relative_rank(e_color c, e_rank r)
+  {
+  return e_rank(r ^ (c * 7));
   }
