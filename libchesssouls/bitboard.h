@@ -122,7 +122,7 @@ inline bitboard attacks_positive_ray_direction(e_positive_ray dir, e_square s, b
   bitboard blocker = attacks & occ;
   if (blocker)
     {
-    e_square sq = most_significant_bit(blocker);
+    e_square sq = least_significant_bit(blocker);
     attacks ^= ray_attack[dir][sq];
     }
   return attacks;
@@ -134,7 +134,7 @@ inline bitboard attacks_negative_ray_direction(e_negative_ray dir, e_square s, b
   bitboard blocker = attacks & occ;
   if (blocker)
     {
-    e_square sq = least_significant_bit(blocker);
+    e_square sq = most_significant_bit(blocker);
     attacks ^= ray_attack[dir][sq];
     }
   return attacks;

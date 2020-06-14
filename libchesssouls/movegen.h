@@ -15,7 +15,10 @@ enum e_movegentype
   };
 
 template <e_movegentype T>
-move* generate(const position& pos, move* mlist);
+LIB_CHESSSOULS_API move* generate(const position& pos, move* mlist);
+
+template <>
+LIB_CHESSSOULS_API move* generate<legal>(const position& pos, move* mlist);
 
 template <e_movegentype T>
 struct movelist

@@ -111,7 +111,7 @@ namespace
 
       while (b2)
         {
-        e_square to = pop_least_significant_bit(b1);
+        e_square to = pop_least_significant_bit(b2);
         *mlist++ = make_move(to - up - up, to);
         }
 

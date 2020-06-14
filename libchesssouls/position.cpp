@@ -5,7 +5,7 @@
 
 namespace
   {
-  static const std::string piece_to_char(" PNBRQK   pnbrqk");
+  static const std::string piece_to_char(" PNBRQK  pnbrqk");
   }
 
 position::position()
@@ -26,6 +26,10 @@ position::~position()
 void position::clear()
   {
   std::memset(this, 0, sizeof(position));
+  ep = sq_none;
+  for (int i = 0; i < nr_piecetype; ++i)
+    for (int j = 0; j < 16; ++j)
+      piece_list[white][i][j] = piece_list[black][i][j] = sq_none;
   }
 
 void position::set_fen(const std::string& fen)
