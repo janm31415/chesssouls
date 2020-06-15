@@ -6,6 +6,16 @@
 
 #include <string>
 
+struct hist_t
+  {
+  move m;
+  uint8_t castle;
+  e_square ep;
+  int rule50;
+  uint64_t hash;
+  e_piece capture;  
+  };
+
 class position
   {
   public:
@@ -19,6 +29,7 @@ class position
     LIB_CHESSSOULS_API void clear();
 
     void put_piece(e_square s, e_color c, e_piecetype pt);
+    void move_piece(e_square from, e_square to, e_color c, e_piecetype pt);
     void remove_piece(e_square s, e_color c, e_piecetype pt);
     bool empty(e_square s) const;
     e_piece piece_on(e_square s) const;
@@ -73,6 +84,8 @@ class position
       return bb_by_type[all_pieces] & castling_path[castle];
       }
 
+    void set_hash();
+
     void compute_checkers();
 
     bitboard checkers() const
@@ -87,8 +100,13 @@ class position
 
     bool legal(move m, bitboard pinned) const;
 
+    void do_move(move m);
+    void undo_move(move m);
+
   private:
     bitboard _check_blockers(e_color c, e_color king_color) const;
+    void do_castling(e_square from, e_square& to, e_square& rfrom, e_square& rto);
+    void undo_castling(e_square from, e_square& to, e_square& rfrom, e_square& rto);
 
   private:
     e_piece board[nr_squares];
@@ -104,6 +122,9 @@ class position
     e_square ep;
     int rule50;
     int game_ply;
+    uint64_t hash;
+    hist_t hist_dat[400];
+    uint64_t nodes;
   }; 
 
 template<e_piecetype Pt>

@@ -17,6 +17,7 @@ hash.h
 libchesssouls_api.h
 movegen.h
 notation.h
+perft.h
 position.h
 types.h
 )
@@ -27,6 +28,7 @@ hash.cpp
 rkiss.h
 movegen.cpp
 notation.cpp
+perft.cpp
 position.cpp
 )
 

@@ -6,7 +6,7 @@
 uint64_t hash_piece[nr_color][nr_piecetype][nr_squares];
 uint64_t hash_side;
 uint64_t hash_ep[nr_squares];
-uint64_t hash_castle[16];
+//uint64_t hash_castle[16];
 
 namespace
   {
@@ -32,6 +32,6 @@ void init_hash()
   hash_side = hash_rand();
   for (i = 0; i < nr_squares; ++i)
     hash_ep[i] = hash_rand();
-  for (i = 0; i < 16; ++i)
-    hash_castle[i] = hash_rand();
+  //for (i = 0; i < 16; ++i)
+  //  hash_castle[i] = hash_rand();
   }

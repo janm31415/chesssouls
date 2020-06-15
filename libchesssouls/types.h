@@ -205,7 +205,17 @@ inline e_rank relative_rank(e_color c, e_rank r)
   return e_rank(r ^ (c * 7));
   }
 
+inline e_rank relative_rank(e_color c, e_square s)
+  {
+  return relative_rank(c, rank_of(s));
+  }
+
 inline e_square relative_square(e_color c, e_square s)
   {
   return e_square(s ^ (c * 56));
+  }
+
+inline e_square pawn_push(e_color c) 
+  {
+  return c == white ? sq_delta_up : sq_delta_down;
   }
