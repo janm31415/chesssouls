@@ -3,11 +3,12 @@
 #include "hash.h"
 #include <algorithm>
 #include <sstream>
+#include <intrin.h>
 
 namespace
   {
   static const std::string piece_to_char(" PNBRQK  pnbrqk");
-
+  /*
   int castle_mask[64] = {
    7, 15, 15, 15,  3, 15, 15, 11,
   15, 15, 15, 15, 15, 15, 15, 15,
@@ -18,7 +19,17 @@ namespace
   15, 15, 15, 15, 15, 15, 15, 15,
   13, 15, 15, 15, 12, 15, 15, 14
     };
-
+  */
+  int castle_mask[64] = { 
+13, 15, 15, 15, 12, 15, 15, 14,
+15, 15, 15, 15, 15, 15, 15, 15,
+15, 15, 15, 15, 15, 15, 15, 15,
+15, 15, 15, 15, 15, 15, 15, 15,
+15, 15, 15, 15, 15, 15, 15, 15,
+15, 15, 15, 15, 15, 15, 15, 15,
+15, 15, 15, 15, 15, 15, 15, 15,
+7, 15, 15, 15,  3, 15, 15, 11
+    };
   }
 
 position::position()
@@ -143,6 +154,8 @@ void position::set_fen(const std::string& fen)
   set_hash();
 
   compute_checkers();
+
+  assert(position_is_ok());
   }
 
 std::string position::fen() const
@@ -199,6 +212,7 @@ void position::put_piece(e_square s, e_color c, e_piecetype pt)
 
 void position::move_piece(e_square from, e_square to, e_color c, e_piecetype pt)
   {
+  assert(pt != no_piecetype);
   bitboard from_to = square[from] ^ square[to];  
   bb_by_type[all_pieces] ^= from_to;
   bb_by_type[pt] ^= from_to;
@@ -354,20 +368,26 @@ bool position::legal(move m, bitboard pinned) const
     || aligned(from, to_square(m), king_square(my_color));
   }
 
-void position::set_hash()
+uint64_t position::_compute_hash() const
   {
-  hash = 0;
+  uint64_t h = 0;
   for (bitboard b = pieces(); b; )
     {
     e_square s = pop_least_significant_bit(b);
     e_piece pc = piece_on(s);
-    hash ^= hash_piece[color_of(pc)][type_of(pc)][s];
+    h ^= hash_piece[color_of(pc)][type_of(pc)][s];
     }
   if (_side_to_move == black)
-    hash ^= hash_side;
+    h ^= hash_side;
   if (ep_square() != sq_none)
-    hash ^= hash_ep[ep_square()];
-  //hash ^= hash_castle[_castle]; 
+    h ^= hash_ep[ep_square()];
+  //h ^= hash_castle[_castle]; 
+  return h;
+  }
+
+void position::set_hash()
+  {
+  hash = _compute_hash();
   }
 
 void position::do_castling(e_square from, e_square& to, e_square& rfrom, e_square& rto)
@@ -401,9 +421,7 @@ void position::undo_castling(e_square from, e_square& to, e_square& rfrom, e_squ
 void position::do_move(move m)
   {
   assert(is_ok(m));
-  ++nodes;
-  uint64_t hash = hist_dat[game_ply].hash;
-  hash ^= hash_side;
+  ++nodes;  
   hist_dat[game_ply].m = m;
   hist_dat[game_ply].capture = piece_on(to_square(m));
   hist_dat[game_ply].castle = _castle;
@@ -412,6 +430,8 @@ void position::do_move(move m)
   hist_dat[game_ply].hash = hash;
   ++game_ply;
 
+  hash ^= hash_side;
+
   e_color my_color = _side_to_move;
   e_color other_color = ~my_color;
   e_square from = from_square(m);
@@ -419,13 +439,13 @@ void position::do_move(move m)
   e_piece pc = piece_on(from);
   e_piecetype pt = type_of(pc);
   e_piecetype captured = type_of(piece_on(to));
+  assert(pc != no_piece);
   assert(color_of(pc) == my_color);
   assert(piece_on(to) == no_piece || color_of(piece_on(to)) == other_color || type_of(m) == castling);
   assert(captured != king);
 
   if (type_of(m) == castling)
-    {
-    _castle &= castle_mask[from] & castle_mask[to];
+    {    
     e_square rfrom, rto;
     do_castling(from, to, rfrom, rto);
     captured = no_piecetype;
@@ -455,13 +475,15 @@ void position::do_move(move m)
     rule50 = 0;
     }
 
-  hash ^= hash_piece[my_color][rook][from] ^ hash_piece[my_color][rook][to];
+  hash ^= hash_piece[my_color][pt][from] ^ hash_piece[my_color][pt][to];
 
   if (ep != sq_none)
     {
     hash ^= hash_ep[ep];
     ep = sq_none;
     }
+
+  _castle &= castle_mask[from] & castle_mask[to];
 
   if (type_of(m) != castling)
     move_piece(from, to, my_color, pt);
@@ -492,10 +514,16 @@ void position::do_move(move m)
   _checkers = attackers_to(king_square(other_color)) & pieces(my_color);
 
   _side_to_move = ~_side_to_move;
+
+  assert((attackers_to(king_square(my_color)) & pieces(other_color))==0);
+
+  assert(position_is_ok());
   }
 
 void position::undo_move(move m)
   {
+  assert(m == hist_dat[game_ply - 1].m);
+
   assert(is_ok(m));
   _side_to_move = ~_side_to_move;
 
@@ -525,7 +553,7 @@ void position::undo_move(move m)
     {
     move_piece(to, from, my_color, pt); // Put the piece back at the source square
 
-    if (hist_dat[game_ply].capture)
+    if (hist_dat[game_ply-1].capture)
       {
       e_square capsq = to;
 
@@ -539,10 +567,66 @@ void position::undo_move(move m)
         assert(piece_on(capsq) == no_piece);
         }
 
-      put_piece(capsq, ~my_color, type_of(hist_dat[game_ply].capture)); // Restore the captured piece
+      put_piece(capsq, ~my_color, type_of(hist_dat[game_ply-1].capture)); // Restore the captured piece
       }
-    }
+    }   
 
-  
   --game_ply;
+  
+  _castle = hist_dat[game_ply].castle;
+  ep = hist_dat[game_ply].ep;
+  rule50 = hist_dat[game_ply].rule50;
+  hash = hist_dat[game_ply].hash;
+  
+  
+
+  assert(position_is_ok());
+  }
+
+bool position::position_is_ok() const
+  {
+  if (_side_to_move != white && _side_to_move != black)
+    return false;
+  if (piece_on(king_square(white)) != white_king)
+    return false;
+  if (piece_on(king_square(black)) != black_king)
+    return false;
+  if (ep_square() != sq_none && relative_rank(_side_to_move, ep_square()) != rank_6)
+    return false;
+
+  if (pieces(white) & pieces(black))
+    return false;
+
+  if ((pieces(white) | pieces(black)) != pieces())
+    return false;
+
+  for (e_piecetype p1 = pawn; p1 <= king; ++p1)
+    for (e_piecetype p2 = pawn; p2 <= king; ++p2)
+      if (p1 != p2 && (pieces(p1) & pieces(p2)))
+        return false;
+
+  if (std::count(board, board + sq_end, white_king) != 1)
+    return false;
+  if (std::count(board, board + sq_end, black_king) != 1)
+    return false;
+
+  if (attackers_to(king_square(~_side_to_move)) & pieces(_side_to_move))
+    return false;
+
+  for (e_color c = white; c <= black; ++c)
+    for (e_piecetype pt = pawn; pt <= king; ++pt)
+      if (piece_count[c][pt] != __popcnt64(pieces(c, pt)))
+        return false;
+
+  for (e_color c = white; c <= black; ++c)
+    for (e_piecetype pt = pawn; pt <= king; ++pt)
+      for (int i = 0; i < piece_count[c][pt]; ++i)
+        if (board[piece_list[c][pt][i]] != make_piece(c, pt)
+          || index[piece_list[c][pt][i]] != i)
+          return false;
+
+  if (_compute_hash() != hash)
+    return false;
+
+  return true;
   }

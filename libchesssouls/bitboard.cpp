@@ -54,7 +54,7 @@ void init_bitboards()
   {
   for (auto s = sq_a1; s < sq_end; ++s)
     {
-    square[s] = (uint64_t)1 << s;
+    square[s] = ((uint64_t)1) << s;
     bit_scan_forward_table[bit_scan_forward_index(square[s])] = s;
     }
 

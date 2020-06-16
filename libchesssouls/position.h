@@ -28,6 +28,8 @@ class position
 
     LIB_CHESSSOULS_API void clear();
 
+    LIB_CHESSSOULS_API bool position_is_ok() const;
+
     void put_piece(e_square s, e_color c, e_piecetype pt);
     void move_piece(e_square from, e_square to, e_color c, e_piecetype pt);
     void remove_piece(e_square s, e_color c, e_piecetype pt);
@@ -100,13 +102,14 @@ class position
 
     bool legal(move m, bitboard pinned) const;
 
-    void do_move(move m);
-    void undo_move(move m);
+    LIB_CHESSSOULS_API void do_move(move m);
+    LIB_CHESSSOULS_API void undo_move(move m);
 
   private:
     bitboard _check_blockers(e_color c, e_color king_color) const;
     void do_castling(e_square from, e_square& to, e_square& rfrom, e_square& rto);
     void undo_castling(e_square from, e_square& to, e_square& rfrom, e_square& rto);
+    uint64_t _compute_hash() const;
 
   private:
     e_piece board[nr_squares];
