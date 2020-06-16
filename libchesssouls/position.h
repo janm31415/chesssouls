@@ -14,6 +14,7 @@ struct hist_t
   int rule50;
   uint64_t hash;
   e_piece capture;  
+  bitboard checkers;
   };
 
 class position

@@ -36,7 +36,7 @@ namespace
 
     std::string fen8("3r1rk1/pQp2ppp/4b3/4b3/P3P3/2N5/1P4PP/2K2B1R b - a3 0 16");
     position p8(fen8);
-    TEST_EQ(fen8, p8.fen());
+    TEST_EQ(std::string("3r1rk1/pQp2ppp/4b3/4b3/P3P3/2N5/1P4PP/2K2B1R b - - 0 16"), p8.fen());
 
     std::string fen9("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     position p9(fen9);

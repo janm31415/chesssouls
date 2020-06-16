@@ -14,6 +14,7 @@ namespace
     if (pos.castling_path_obstructed(1 << (my_color * 2)))
       return mlist;
     e_square kfrom = pos.king_square(my_color);
+    e_square rfrom = relative_square(my_color, sq_h1);
     e_square kto = relative_square(my_color, sq_g1);
     bitboard enemies = pos.pieces(~my_color);
     for (e_square s = kto; s != kfrom; s += sq_delta_left)
@@ -22,7 +23,7 @@ namespace
         return mlist;
       }
 
-    *mlist++ = make<castling>(kfrom, kto);
+    *mlist++ = make<castling>(kfrom, rfrom);
     return mlist;
     }
 
@@ -34,6 +35,7 @@ namespace
     if (pos.castling_path_obstructed(2 << (my_color * 2)))
       return mlist;
     e_square kfrom = pos.king_square(my_color);
+    e_square rfrom = relative_square(my_color, sq_a1);
     e_square kto = relative_square(my_color, sq_c1);
     bitboard enemies = pos.pieces(~my_color);
     for (e_square s = kto; s != kfrom; s += sq_delta_right)
@@ -42,7 +44,7 @@ namespace
         return mlist;
       }
 
-    *mlist++ = make<castling>(kfrom, kto);
+    *mlist++ = make<castling>(kfrom, rfrom);
     return mlist;
     }
 
@@ -203,13 +205,10 @@ namespace
       while (b)
         *mlist++ = make_move(ksq, pop_least_significant_bit(b));
       }
-    if (T != evasions && T != captures)
+    if (T != evasions && T != captures && pos.can_castle(my_color))
       {
-      if (pos.can_castle(my_color))
-        {
-        mlist = generate_castling_kingside(pos, mlist, my_color);
-        mlist = generate_castling_queenside(pos, mlist, my_color);
-        }
+      mlist = generate_castling_kingside(pos, mlist, my_color);
+      mlist = generate_castling_queenside(pos, mlist, my_color);        
       }
     return mlist;
     }
@@ -220,6 +219,8 @@ namespace
 template <e_movegentype T>
 move* generate(const position& pos, move* mlist)
   {
+  assert(T == captures || T == quiet || T == non_evasions);
+  assert(!pos.checkers());
   e_color my_color = pos.side_to_move();
   bitboard target =
     T == captures ? pos.pieces(~my_color)
@@ -284,8 +285,8 @@ move* generate<legal>(const position& pos, move* mlist)
     if ((pinned || from_square(*current) == ksq || type_of(*current) == enpassant)
       && !pos.legal(*current, pinned))
       *current = *(--end);
-    else
-      ++current;
+    else      
+      ++current;      
     }
   return end;
   }

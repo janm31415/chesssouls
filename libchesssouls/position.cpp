@@ -144,6 +144,9 @@ void position::set_fen(const std::string& fen)
     && ((ss >> row) && (row == '3' || row == '6')))
     {
     ep = make_square(e_file(col - 'a'), e_rank(row - '1'));
+
+    if (!(attackers_to(ep) & pieces(_side_to_move, pawn)))
+      ep = sq_none;
     }
 
   // 5-6. Halfmove clock and fullmove number
@@ -423,11 +426,12 @@ void position::do_move(move m)
   assert(is_ok(m));
   ++nodes;  
   hist_dat[game_ply].m = m;
-  hist_dat[game_ply].capture = piece_on(to_square(m));
+  hist_dat[game_ply].capture = type_of(m) == enpassant ? piece_on(to_square(m)+ pawn_push(~_side_to_move)) : piece_on(to_square(m));
   hist_dat[game_ply].castle = _castle;
   hist_dat[game_ply].ep = ep;
   hist_dat[game_ply].rule50 = rule50;
   hist_dat[game_ply].hash = hash;
+  hist_dat[game_ply].checkers = _checkers;
   ++game_ply;
 
   hash ^= hash_side;
@@ -438,7 +442,7 @@ void position::do_move(move m)
   e_square to = to_square(m);
   e_piece pc = piece_on(from);
   e_piecetype pt = type_of(pc);
-  e_piecetype captured = type_of(piece_on(to));
+  e_piecetype captured = type_of(m) == enpassant ? pawn : type_of(piece_on(to));
   assert(pc != no_piece);
   assert(color_of(pc) == my_color);
   assert(piece_on(to) == no_piece || color_of(piece_on(to)) == other_color || type_of(m) == castling);
@@ -577,7 +581,7 @@ void position::undo_move(move m)
   ep = hist_dat[game_ply].ep;
   rule50 = hist_dat[game_ply].rule50;
   hash = hist_dat[game_ply].hash;
-  
+  _checkers = hist_dat[game_ply].checkers;
   
 
   assert(position_is_ok());

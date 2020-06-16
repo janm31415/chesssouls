@@ -133,8 +133,16 @@ void init_bitboards()
     pseudo_attack[queen][s1] |= pseudo_attack[rook][s1];
     for (e_square s2 = sq_a1; s2 <= sq_h8; ++s2)
       {      
-      line[s1][s2] = (attacks_from_rook(s1, 0) & attacks_from_rook(s2, 0)) | (attacks_from_bishop(s1, 0) & attacks_from_bishop(s2, 0)) | s1 | s2;
-      between[s1][s2] = (attacks_from_rook(s1, square[s2]) & attacks_from_rook(s2, square[s1])) | (attacks_from_bishop(s1, square[s2]) & attacks_from_bishop(s2, square[s1]));
+      if (pseudo_attack[bishop][s1] & s2)
+        {
+        line[s1][s2] = (attacks_from_bishop(s1, 0) & attacks_from_bishop(s2, 0)) | s1 | s2;
+        between[s1][s2] = attacks_from_bishop(s1, square[s2]) & attacks_from_bishop(s2, square[s1]);
+        }
+      else if (pseudo_attack[rook][s1] & s2)
+        {
+        line[s1][s2] = (attacks_from_rook(s1, 0) & attacks_from_rook(s2, 0)) | s1 | s2;
+        between[s1][s2] = attacks_from_rook(s1, square[s2]) & attacks_from_rook(s2, square[s1]);
+        }
       }
     }
   }
