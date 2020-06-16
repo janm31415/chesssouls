@@ -15,6 +15,9 @@ struct hist_t
   uint64_t hash;
   e_piece capture;  
   bitboard checkers;
+  int lazy_piece_value[2];
+  int lazy_pawn_value[2];
+  int lazy_pcsq[2];
   };
 
 class position
@@ -30,6 +33,11 @@ class position
     LIB_CHESSSOULS_API void clear();
 
     LIB_CHESSSOULS_API bool position_is_ok() const;
+
+    LIB_CHESSSOULS_API std::string pretty() const;
+
+    LIB_CHESSSOULS_API int repetitions() const;
+    LIB_CHESSSOULS_API bool is_draw() const;
 
     void put_piece(e_square s, e_color c, e_piecetype pt);
     void move_piece(e_square from, e_square to, e_color c, e_piecetype pt);
@@ -88,6 +96,7 @@ class position
       }
 
     void set_hash();
+    void set_lazy_material();
 
     void compute_checkers();
 
@@ -103,7 +112,28 @@ class position
 
     bool legal(move m, bitboard pinned) const;
 
+    int fifty() const 
+      { 
+      return rule50; 
+      }
+
+    int non_pawn_material_value(e_color c) const
+      {
+      return lazy_piece_value[c];
+      }
+
+    int pawn_material_value(e_color c) const
+      {
+      return lazy_pawn_value[c];
+      }
+
+    int positional_value(e_color c) const
+      {
+      return lazy_pcsq[c];
+      }
+
     LIB_CHESSSOULS_API void do_move(move m);
+    LIB_CHESSSOULS_API move last_move() const;
     LIB_CHESSSOULS_API void undo_move(move m);
 
   private:
@@ -111,6 +141,7 @@ class position
     void do_castling(e_square from, e_square& to, e_square& rfrom, e_square& rto);
     void undo_castling(e_square from, e_square& to, e_square& rfrom, e_square& rto);
     uint64_t _compute_hash() const;
+    void _compute_lazy_material(int* lazy_piece_v, int* lazy_pawn_v, int* lazy_sq) const;
 
   private:
     e_piece board[nr_squares];
@@ -129,6 +160,9 @@ class position
     uint64_t hash;
     hist_t hist_dat[400];
     uint64_t nodes;
+    int lazy_piece_value[2];
+    int lazy_pawn_value[2];
+    int lazy_pcsq[2];
   }; 
 
 template<e_piecetype Pt>

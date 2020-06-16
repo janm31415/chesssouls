@@ -13,6 +13,7 @@ endif (UNIX)
 
 set(HDRS
 bitboard.h
+eval.h
 hash.h
 libchesssouls_api.h
 movegen.h
@@ -24,6 +25,7 @@ types.h
 	
 set(SRCS
 bitboard.cpp
+eval.cpp
 hash.cpp
 rkiss.h
 movegen.cpp

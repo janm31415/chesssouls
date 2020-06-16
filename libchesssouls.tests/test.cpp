@@ -3,6 +3,7 @@
 #include "test_position.h"
 
 #include <libchesssouls/bitboard.h>
+#include <libchesssouls/eval.h>
 #include <libchesssouls/hash.h>
 
 #include <ctime>
@@ -13,6 +14,7 @@ int main(int /*argc*/, const char* /*argv*/[])
 
   init_bitboards();
   init_hash();
+  init_eval();
 
   auto tic = std::clock();
   run_all_movegen_tests();

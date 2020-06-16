@@ -10,7 +10,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_subdirectory(chesssouls)
+add_subdirectory(greedy_player)
 add_subdirectory(libchesssouls)
 add_subdirectory(libchesssouls.tests)
+add_subdirectory(random_player)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
