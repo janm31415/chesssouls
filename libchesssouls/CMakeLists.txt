@@ -1,37 +1,31 @@
 
-
-if (WIN32)
-  set(TBB_INCLUDE_DIR "C:/Program Files/TBB/include")
-  set(TBB_LIBRARIES "C:/Program Files/TBB/lib/intel64/vc14/tbb.lib" "C:/Program Files/TBB/lib/intel64/vc14/tbb_debug.lib")
-endif (WIN32)
-
-
-if (UNIX)
-  set(TBB_INCLUDE_DIR "/usr/local/include" "/usr/include")
-  set(TBB_LIBRARIES "/usr/lib/x86_64-linux-gnu/libtbb.so" "/usr/lib/x86_64-linux-gnu/libtbb.so.2")
-endif (UNIX)
-
 set(HDRS
 bitboard.h
+book.h
 eval.h
 hash.h
 libchesssouls_api.h
 movegen.h
+movepick.h
 notation.h
 perft.h
 position.h
+search.h
 types.h
 )
 	
 set(SRCS
 bitboard.cpp
+book.cpp
 eval.cpp
 hash.cpp
 rkiss.h
 movegen.cpp
+movepick.cpp
 notation.cpp
 perft.cpp
 position.cpp
+search.cpp
 )
 
 if (WIN32)
@@ -51,11 +45,9 @@ source_group("Source Files" FILES ${srcs})
 
 target_include_directories(libchesssouls
     PRIVATE
-    ${TBB_INCLUDE_DIR}
     )	
     
 	
 target_link_libraries(libchesssouls
     PRIVATE	
-    ${TBB_LIBRARIES}
     )	

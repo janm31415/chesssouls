@@ -87,6 +87,16 @@ void xboard()
       {
       continue;
       }
+    if (std::string(command) == std::string("protover"))
+      {
+      std::cout << "feature myname=\" Random player \"\n";
+      std::cout << "feature done=0\n";
+      std::cout << "feature ping = 1\n";
+      std::cout << "feature memory=1\n";
+      std::cout << "feature setboard=1\n";
+      std::cout << "feature variants=\"normal\"\n";
+      std::cout << "feature done=1\n";
+      }
     if (std::string(command) == std::string("go"))
       {
       computer_side = pos.side_to_move();
@@ -95,6 +105,16 @@ void xboard()
     if (std::string(command) == std::string("force"))
       {
       computer_side = color_end;
+      continue;
+      }
+    if (std::string(command) == std::string("white"))
+      {
+      computer_side = white;
+      continue;
+      }
+    if (std::string(command) == std::string("black"))
+      {
+      computer_side = black;
       continue;
       }
     if (std::string(command) == std::string("new"))
@@ -109,7 +129,19 @@ void xboard()
       move m = pos.last_move();
       if (m != move_none)
         pos.undo_move(m);
-      std::cout << pos.pretty();
+      continue;
+      }
+    if (std::string(command) == std::string("remove"))
+      {
+      if (pos.ply() >= 2)
+        {
+        move m = pos.last_move();
+        if (m != move_none)
+          pos.undo_move(m);
+        m = pos.last_move();
+        if (m != move_none)
+          pos.undo_move(m);
+        }
       continue;
       }
     if (std::string(command) == std::string("st"))

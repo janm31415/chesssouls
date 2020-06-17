@@ -100,6 +100,14 @@ enum e_negative_ray
   south_east=4,south, south_west, west
   };
 
+#define max_ply 32
+
+struct pv_line 
+  {
+  int nr_of_moves;      // Number of moves in the line.
+  move moves[max_ply];  // The principal variation line.
+  };
+
 #define ENABLE_BASE_OPERATORS_ON(T)                                         \
 inline T operator+(const T d1, const T d2) { return T(int(d1) + int(d2)); } \
 inline T operator-(const T d1, const T d2) { return T(int(d1) - int(d2)); } \

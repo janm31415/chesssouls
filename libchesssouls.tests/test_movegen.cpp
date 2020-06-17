@@ -130,4 +130,5 @@ void run_all_movegen_tests()
   test_position_3();
   test_position_4();
   test_bug_3();
+  //r1b1k1nr / p1b4p / 4p1p1 / 3p1p2 / K3p3 / 8 / P1P2q1P / 8 b kq - 1 22
   }

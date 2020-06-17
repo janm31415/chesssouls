@@ -57,6 +57,13 @@ class position
 
     e_square ep_square() const { return ep; }
 
+    int ply() const { return game_ply; }
+
+    move get_previously_played_move(int ply) const
+      {
+      return hist_dat[ply].m;
+      }
+
     template <e_piecetype Pt> 
     const e_square* list(e_color c) const;
 
@@ -158,7 +165,7 @@ class position
     int rule50;
     int game_ply;
     uint64_t hash;
-    hist_t hist_dat[400];
+    hist_t hist_dat[5899];
     uint64_t nodes;
     int lazy_piece_value[2];
     int lazy_pawn_value[2];
