@@ -46,6 +46,11 @@ class position
     e_piece piece_on(e_square s) const;
     e_piece moved_piece(move m) const;
 
+    LIB_CHESSSOULS_API void set_side_to_move(e_color c)
+      {
+      _side_to_move = c;
+      }
+
     e_color side_to_move() const { return _side_to_move; }
 
     bitboard pieces() const;

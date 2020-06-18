@@ -7,6 +7,7 @@
 #include <libchesssouls/position.h>
 #include <libchesssouls/movegen.h>
 #include <libchesssouls/notation.h>
+#include <libchesssouls/search.h>
 
 #include <string>
 #include <random>
@@ -15,29 +16,12 @@
 
 
 
-move generate_greedy_move(position& pos)
-  {  
-  move opening = book_move(pos);
-  if (opening != move_none)
-    return opening;
-  movelist<legal> moves(pos);
-  size_t nr_of_moves = moves.size();
-  if (nr_of_moves == 0)
+move generate_move(position& pos)
+  {
+  think(pos, 2);
+  if (pv[0].nr_of_moves == 0)
     return move_none;
-  int best_score = std::numeric_limits<int>::max();
-  move best_move = *moves;
-  for (; *moves; ++moves)
-    {
-    pos.do_move(*moves);
-    int score = eval(pos);
-    if (score < best_score)
-      {
-      best_score = score;
-      best_move = *moves;
-      }
-    pos.undo_move(*moves);
-    }
-  return best_move;
+  return pv[0].moves[0];
   }
 
 void print_result(const position& pos)
@@ -79,7 +63,7 @@ void xboard()
     fflush(stdout);
     if (pos.side_to_move() == computer_side)
       {
-      auto m = generate_greedy_move(pos);
+      auto m = generate_move(pos);
       if (m == move_none)
         {
         computer_side = color_end;
@@ -101,7 +85,7 @@ void xboard()
       }
     if (std::string(command) == std::string("protover"))
       {
-      std::cout << "feature myname=\" Greedy player \"\n";
+      std::cout << "feature myname=\" Beginner \"\n";
       std::cout << "feature done=0\n";
       std::cout << "feature ping = 1\n";
       std::cout << "feature memory=1\n";
@@ -208,13 +192,14 @@ int main(int argc, char** argv)
   std::string fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
   //std::string fen("4k3/RR6/8/8/8/8/8/4K3 w KQkq - 0 1");
   position pos(fen);
-
+  node_limit = 64;
+  max_depth = 15;
   e_color computer_side = color_end;
   for (;;)
     {
     if (pos.side_to_move() == computer_side)
       {
-      auto m = generate_greedy_move(pos);
+      auto m = generate_move(pos);
       if (m == move_none)
         {
         std::cout << "(no legal moves)\n";

@@ -132,12 +132,21 @@ void xboard()
       }
     if (std::string(command) == std::string("white"))
       {
-      computer_side = white;
+      pos.set_side_to_move(white);
+      computer_side = black;
       continue;
       }
     if (std::string(command) == std::string("black"))
       {
-      computer_side = black;
+      pos.set_side_to_move(black);
+      computer_side = white;
+      continue;
+      }
+    if (std::string(command) == std::string("ping"))
+      {
+      int nr = 0;
+      sscanf(line, "ping %d", &nr);
+      std::cout << "pong " << nr << "\n";
       continue;
       }
     if (std::string(command) == std::string("st"))
@@ -153,6 +162,12 @@ void xboard()
     if (std::string(command) == std::string("post"))
       continue;
     if (std::string(command) == std::string("nopost"))
+      continue;
+    if (std::string(command) == std::string("easy"))
+      continue;
+    if (std::string(command) == std::string("hard"))
+      continue;
+    if (std::string(command) == std::string("computer"))
       continue;
     if (std::string(command) == std::string("quit"))
       return;
@@ -177,8 +192,7 @@ int main(int argc, char** argv)
   std::string fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
   //std::string fen("4k3/RR6/8/8/8/8/8/4K3 w KQkq - 0 1");
   position pos(fen);
-  node_limit = 64;
-  max_depth = 15;
+  max_depth = 5;
   e_color computer_side = color_end;
   for (;;)
     {

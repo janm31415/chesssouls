@@ -109,12 +109,14 @@ void xboard()
       }
     if (std::string(command) == std::string("white"))
       {
-      computer_side = white;
+      pos.set_side_to_move(white);
+      computer_side = black;
       continue;
       }
     if (std::string(command) == std::string("black"))
       {
-      computer_side = black;
+      pos.set_side_to_move(black);
+      computer_side = white;
       continue;
       }
     if (std::string(command) == std::string("new"))
@@ -144,6 +146,13 @@ void xboard()
         }
       continue;
       }
+    if (std::string(command) == std::string("ping"))
+      {
+      int nr = 0;
+      sscanf(line, "ping %d", &nr);
+      std::cout << "pong " << nr << "\n";
+      continue;
+      }
     if (std::string(command) == std::string("st"))
       continue;
     if (std::string(command) == std::string("sd"))
@@ -157,6 +166,12 @@ void xboard()
     if (std::string(command) == std::string("post"))
       continue;
     if (std::string(command) == std::string("nopost"))
+      continue;
+    if (std::string(command) == std::string("easy"))
+      continue;
+    if (std::string(command) == std::string("hard"))
+      continue;
+    if (std::string(command) == std::string("computer"))
       continue;
     if (std::string(command) == std::string("quit"))
       return;
