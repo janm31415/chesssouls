@@ -1,8 +1,11 @@
 #pragma once
 
 #include "types.h"
+#include "libchesssouls_api.h"
 
 class position;
+
+LIB_CHESSSOULS_API extern int move_step; // normally equal to 1, but if you want to handicap the engine, you can skip moves.
 
 class move_picker
   {

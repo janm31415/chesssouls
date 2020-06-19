@@ -8,7 +8,8 @@ namespace
   {
   std::vector<std::vector<move>> book;
   int max_book_ply = 0;
-  std::default_random_engine generator;
+  //std::default_random_engine generator;
+  std::random_device generator;
   std::uniform_int_distribution<int> distribution(0, 1000);
   }
 

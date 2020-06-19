@@ -6,6 +6,7 @@
 #include <libchesssouls/hash.h>
 #include <libchesssouls/position.h>
 #include <libchesssouls/movegen.h>
+#include <libchesssouls/movepick.h>
 #include <libchesssouls/notation.h>
 #include <libchesssouls/search.h>
 
@@ -192,8 +193,9 @@ int main(int argc, char** argv)
   std::string fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
   //std::string fen("4k3/RR6/8/8/8/8/8/4K3 w KQkq - 0 1");
   position pos(fen);
-  node_limit = 64;
+  node_limit = 1024;
   max_depth = 15;
+  move_step = 5;
   e_color computer_side = color_end;
   for (;;)
     {

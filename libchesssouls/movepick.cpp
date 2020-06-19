@@ -2,6 +2,8 @@
 #include "position.h"
 #include "search.h"
 
+int move_step = 1;
+
 move_picker::move_picker(move* first, move* last, const position& pos) :
   _first(first), _last(last), _pos(pos), _current(first)
   {
@@ -52,5 +54,7 @@ move move_picker::next()
   *_current = *best_move;
   *best_move = tmp;
   _score[best_move - _first] = _score[_current - _first];
-  return *_current++;
+  auto ret = *_current;
+  _current += move_step;
+  return ret;
   }

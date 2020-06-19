@@ -97,7 +97,7 @@ namespace
           pv[ply].moves[j] = pv[ply + 1].moves[j];
         pv[ply].nr_of_moves = pv[ply + 1].nr_of_moves;
 
-        if (score >= beta)
+        if (score > beta)
           return beta;
         alpha = score;
         }
@@ -158,7 +158,7 @@ namespace
           pv[ply].moves[j] = pv[ply + 1].moves[j];
         pv[ply].nr_of_moves = pv[ply + 1].nr_of_moves;
 
-        if (score >= beta)
+        if (score > beta)
           return beta;
         alpha = score;        
         }
