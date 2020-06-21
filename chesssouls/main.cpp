@@ -10,18 +10,27 @@
 #include <libchesssouls/search.h>
 
 #include <string>
+#include <chrono>
 #include <random>
 
 #include <signal.h>
 
-
-
-move generate_move(position& pos)
+namespace
   {
-  think(pos, 2);
-  if (pv[0].nr_of_moves == 0)
+  int maximum_moves = 1;
+  int maximum_time = 1 << 25;
+  int moves_left = 1;
+  int time_left = 1 << 25;
+  int time_inc = 1;
+  }
+
+
+move generate_move(position& pos, search_context& ctxt)
+  {
+  think(pos, 2, ctxt);
+  if (ctxt.pv[0].nr_of_moves == 0)
     return move_none;
-  return pv[0].moves[0];
+  return ctxt.pv[0].moves[0];
   }
 
 void print_result(const position& pos)
@@ -50,6 +59,12 @@ void print_result(const position& pos)
     }
   }
 
+int get_duration(const std::chrono::time_point<std::chrono::system_clock>& tick, const std::chrono::time_point<std::chrono::system_clock>& tock)
+  {
+  std::chrono::duration<double> elapsed = tock - tick;
+  return int(elapsed.count()*1000.0);
+  }
+
 void xboard()
   {
   signal(SIGINT, SIG_IGN);
@@ -58,19 +73,40 @@ void xboard()
   position pos(fen);
   char line[256], command[256];
   e_color computer_side = color_end;
+  search_context ctxt;
   for (;;)
     {
     fflush(stdout);
     if (pos.side_to_move() == computer_side)
       {
-      auto m = generate_move(pos);
+      auto tick = std::chrono::system_clock::now();
+      if (maximum_moves <= 1)
+        ctxt.time_limit = time_left;
+      else
+        {
+        ctxt.time_limit = (time_left * 95 / 100 - 100 + time_inc * (moves_left - 1)) / moves_left;
+        if (ctxt.time_limit < 0)
+          ctxt.time_limit = 0;
+        }
+      auto m = generate_move(pos, ctxt);
       if (m == move_none)
         {
         computer_side = color_end;
         continue;
         }
       std::cout << "move " << move_to_uci(m) << "\n";
+      auto tock = std::chrono::system_clock::now();
       pos.do_move(m);
+      time_left -= get_duration(tick, tock);
+      --moves_left;
+      if (moves_left <= 0)
+        {
+        moves_left = max_moves;
+        if (max_moves <= 1)
+          time_left = maximum_time;
+        else
+          time_left += maximum_time;
+        }
       continue;
       }
     if (!fgets(line, 256, stdin))
@@ -150,13 +186,43 @@ void xboard()
       continue;
       }
     if (std::string(command) == std::string("st"))
+      {
+      sscanf(line, "st %d", &maximum_time);
+      maximum_time *= 1000;
+      maximum_moves = 1;
+      time_left = maximum_time;
+      moves_left = 1;
+      time_inc = 0;
+      ctxt.max_depth = max_ply;
       continue;
+      }
     if (std::string(command) == std::string("sd"))
+      {
+      sscanf(line, "sd %d", &ctxt.max_depth);
+      ctxt.time_limit = 1 << 25;
       continue;
+      }
     if (std::string(command) == std::string("level"))
+      {
+      int sec = 0;
+      if (sscanf(line, "level %d %d %d",
+        &maximum_moves, &maximum_time, &time_inc) == 3 ||
+        sscanf(line, "level %d %d:%d %d",
+          &maximum_moves, &maximum_time, &sec, &time_inc) == 4)
+        {
+        moves_left = maximum_moves;
+        time_left = maximum_time = 60000 * maximum_time + 1000 * sec;
+        time_inc *= 1000;
+        }
       continue;
+      }
     if (std::string(command) == std::string("time"))
+      {
+      sscanf(line, "time %d", &time_left);
+      time_left *= 10;
+      ctxt.max_depth = max_ply;
       continue;
+      }
     if (std::string(command) == std::string("otim"))
       continue;
     if (std::string(command) == std::string("post"))
@@ -190,15 +256,29 @@ int main(int argc, char** argv)
   init_eval();
   read_book("");
   std::string fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-  //std::string fen("4k3/RR6/8/8/8/8/8/4K3 w KQkq - 0 1");
   position pos(fen);
-  max_depth = 5;
+  search_context ctxt;
+  ctxt.max_depth = 5;
+  //ctxt.use_book = false;
+
+  char line[256], command[256];
   e_color computer_side = color_end;
   for (;;)
     {
     if (pos.side_to_move() == computer_side)
       {
-      auto m = generate_move(pos);
+      auto tick = std::chrono::system_clock::now();
+      if (maximum_moves <= 1)
+        ctxt.time_limit = time_left;
+      else
+        {
+        ctxt.time_limit = (time_left * 95 / 100 - 100 + time_inc * (moves_left - 1)) / moves_left;
+        if (ctxt.time_limit < 0)
+          ctxt.time_limit = 0;
+        }
+      //if (time_limit > (maximum_time / maximum_moves) * 2)
+      //  time_limit = (maximum_time / maximum_moves) * 2;
+      auto m = generate_move(pos, ctxt);
       if (m == move_none)
         {
         std::cout << "(no legal moves)\n";
@@ -207,34 +287,51 @@ int main(int argc, char** argv)
         }
       pos.do_move(m);
       std::cout << pos.pretty();
+      auto tock = std::chrono::system_clock::now();
       print_result(pos);
+      time_left -= get_duration(tick, tock);
+      --moves_left;
+      if (moves_left <= 0)
+        {
+        moves_left = max_moves;
+        if (max_moves <= 1)
+          time_left = maximum_time;
+        else
+          time_left += maximum_time;
+        }
       continue;
       }
     std::cout << ":0> ";
-    std::string line;
-    std::cin >> line;
-    if (line == std::string("on"))
+    if (!fgets(line, 256, stdin))
+      {
+      std::cout << "Error: cannot read from stdin\n";
+      return -1;
+      }
+    if (line[0] == '\n')
+      continue;
+    sscanf(line, "%s", command);
+    if (std::string(command) == std::string("on"))
       {
       computer_side = pos.side_to_move();
       continue;
       }
-    if (line == std::string("off"))
+    if (std::string(command) == std::string("off"))
       {
       computer_side = color_end;
       continue;
       }
-    if (line == std::string("d"))
+    if (std::string(command) == std::string("d"))
       {
       std::cout << pos.pretty();
       continue;
       }
-    if (line == std::string("new"))
+    if (std::string(command) == std::string("new"))
       {
       computer_side = color_end;
       pos.set_fen(fen);
       continue;
       }
-    if (line == std::string("undo"))
+    if (std::string(command) == std::string("undo"))
       {
       computer_side = color_end;
       move m = pos.last_move();
@@ -243,14 +340,30 @@ int main(int argc, char** argv)
       std::cout << pos.pretty();
       continue;
       }
-    if (line == std::string("xboard"))
+    if (std::string(command) == std::string("st"))
+      {
+      sscanf(line, "st %d", &maximum_time);
+      maximum_time *= 1000;
+      maximum_moves = 1;
+      time_left = maximum_time;
+      moves_left = 1;
+      ctxt.max_depth = max_ply;
+      continue;
+      }
+    if (std::string(command) == std::string("sd"))
+      {
+      sscanf(line, "sd %d", &ctxt.max_depth);
+      ctxt.time_limit = 1 << 25;
+      continue;
+      }
+    if (std::string(command) == std::string("xboard"))
       {
       xboard();
       break;
       }
-    if (line == std::string("exit"))
+    if (std::string(command) == std::string("exit"))
       break;
-    move m = parse_move(pos, line);
+    move m = parse_move(pos, std::string(command));
     if (m == move_none)
       {
       std::cout << "Illegal move.\n";

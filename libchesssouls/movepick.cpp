@@ -2,13 +2,11 @@
 #include "position.h"
 #include "search.h"
 
-int move_step = 1;
-
-move_picker::move_picker(move* first, move* last, const position& pos) :
-  _first(first), _last(last), _pos(pos), _current(first)
+move_picker::move_picker(move* first, move* last, const position& pos, search_context& ctxt) :
+  _first(first), _last(last), _pos(pos), _current(first), _ctxt(ctxt)
   {
-  bool check_pv = follow_pv;
-  follow_pv = false;
+  bool check_pv = _ctxt.follow_pv;
+  _ctxt.follow_pv = false;
 
   for (move* curr = _first; curr != _last; ++curr)
     {
@@ -18,10 +16,10 @@ move_picker::move_picker(move* first, move* last, const position& pos) :
     if (pc != no_piece)
       _score[curr - _first] = 1000000 + (pc << 4) - pos.piece_on(from);
     else
-      _score[curr - _first] = history[from][to];
-    if (check_pv && *curr == pv[0].moves[ply])
+      _score[curr - _first] = ctxt.history[from][to];
+    if (check_pv && *curr == _ctxt.pv[0].moves[_ctxt.ply])
       {
-      follow_pv = true;
+      _ctxt.follow_pv = true;
       _score[curr - _first] += 10000000;
       }
     }
@@ -55,6 +53,6 @@ move move_picker::next()
   *best_move = tmp;
   _score[best_move - _first] = _score[_current - _first];
   auto ret = *_current;
-  _current += move_step;
+  _current += _ctxt.move_step;
   return ret;
   }

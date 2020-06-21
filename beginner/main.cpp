@@ -15,14 +15,14 @@
 
 #include <signal.h>
 
-
+search_context ctxt;
 
 move generate_move(position& pos)
   {
-  think(pos, 2);
-  if (pv[0].nr_of_moves == 0)
+  think(pos, 2, ctxt);
+  if (ctxt.pv[0].nr_of_moves == 0)
     return move_none;
-  return pv[0].moves[0];
+  return ctxt.pv[0].moves[0];
   }
 
 void print_result(const position& pos)
@@ -193,9 +193,9 @@ int main(int argc, char** argv)
   std::string fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
   //std::string fen("4k3/RR6/8/8/8/8/8/4K3 w KQkq - 0 1");
   position pos(fen);
-  node_limit = 1024;
-  max_depth = 15;
-  move_step = 5;
+  ctxt.node_limit = 1024;
+  ctxt.max_depth = 15;
+  ctxt.move_step = 5;
   e_color computer_side = color_end;
   for (;;)
     {

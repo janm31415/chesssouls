@@ -11,15 +11,16 @@
 #include <chrono>
 #include <limits>
 
-pv_line pv[max_ply];
-int history[nr_squares][nr_squares];
-int max_depth = 4;
-int time_limit = 9999999999;
-uint64_t node_limit = std::numeric_limits<uint64_t>::max();
-bool stop_search;
-bool follow_pv;
-int ply; // the number of half moves since the start of the search
-bool use_book = true;
+search_context::search_context()
+  {
+  max_depth = 4;
+  time_limit = std::numeric_limits<int>::max();
+  node_limit = std::numeric_limits<uint64_t>::max();
+  stop_search = false;
+  follow_pv = true;
+  ply = 0;
+  use_book = true;  
+  }
 
 namespace
   {
@@ -41,28 +42,32 @@ namespace
     return int(elapsed.count()*1000.0);
     }
 
-  void checkup()
+  void checkup(search_context& ctxt)
     {
-    if (get_ms() >= time_limit || nodes > node_limit)
+    if (get_ms() >= ctxt.time_limit || nodes > ctxt.node_limit)
       {
-      stop_search = true;
+      ctxt.stop_search = true;
       }
     }
 
-  int quiesce(position& pos, int alpha, int beta)
-    {
+  int quiesce(position& pos, int alpha, int beta, search_context& ctxt)
+    {    
 
     ++nodes;
 
-    //if ((nodes & 1023) == 0)
-    //  checkup();
+    if ((nodes & 1023) == 0)
+      checkup(ctxt);
 
-    pv[ply].nr_of_moves = ply;
+    ctxt.pv[ctxt.ply].nr_of_moves = ctxt.ply;
 
-    if (ply >= max_ply - 1)
+    if (ctxt.ply >= max_ply - 1)
       return eval(pos);
 
     int score = eval(pos);
+
+    if (ctxt.stop_search)
+      return score;
+
     if (score >= beta)
       return beta;
     if (score > alpha)
@@ -75,7 +80,7 @@ namespace
     else
       last = generate<captures>(pos, mlist);
     *last = move_none;
-    move_picker mp(mlist, last, pos);
+    move_picker mp(mlist, last, pos, ctxt);
 
     bitboard pinned = pos.pinned_pieces(pos.side_to_move());
 
@@ -85,19 +90,19 @@ namespace
       if (!pos.legal(current, pinned))
         continue;
       pos.do_move(current);
-      ++ply;
-      int score = -quiesce(pos, -beta, -alpha);
+      ++ctxt.ply;
+      score = -quiesce(pos, -beta, -alpha, ctxt);
       pos.undo_move(current);
-      --ply;
+      --ctxt.ply;
       if (score > alpha)
         {
         /* update the PV */
-        pv[ply].moves[ply] = current;
-        for (int j = ply + 1; j < pv[ply + 1].nr_of_moves; ++j)
-          pv[ply].moves[j] = pv[ply + 1].moves[j];
-        pv[ply].nr_of_moves = pv[ply + 1].nr_of_moves;
+        ctxt.pv[ctxt.ply].moves[ctxt.ply] = current;
+        for (int j = ctxt.ply + 1; j < ctxt.pv[ctxt.ply + 1].nr_of_moves; ++j)
+          ctxt.pv[ctxt.ply].moves[j] = ctxt.pv[ctxt.ply + 1].moves[j];
+        ctxt.pv[ctxt.ply].nr_of_moves = ctxt.pv[ctxt.ply + 1].nr_of_moves;
 
-        if (score > beta)
+        if (score >= beta)
           return beta;
         alpha = score;
         }
@@ -105,27 +110,27 @@ namespace
     return alpha;
     }
 
-  int negamax(position& pos, int alpha, int beta, int depth)
+  int negamax(position& pos, int alpha, int beta, int depth, search_context& ctxt)
     {
     if (!depth)
       {
-      return quiesce(pos, alpha, beta);
+      return quiesce(pos, alpha, beta, ctxt);
       }
     ++nodes;
 
     //if ((nodes & 1023) == 0)
     //  checkup();
 
-    pv[ply].nr_of_moves = ply;
+    ctxt.pv[ctxt.ply].nr_of_moves = ctxt.ply;
 
     /* if this isn't the root of the search tree (where we have
      to pick a move and can't simply return 0) then check to
      see if the position is a repeat. if so, we can assume that
      this line is a draw and return 0. */
-    if (ply && pos.repetitions())
+    if (ctxt.ply && pos.repetitions())
       return 0;
 
-    if (ply >= max_ply - 1)
+    if (ctxt.ply >= max_ply - 1)
       return eval(pos);
 
     /* are we in check? if so, we want to search deeper */
@@ -135,30 +140,30 @@ namespace
     move mlist[max_moves];
     move* last = generate<legal>(pos, mlist);   
     *last = move_none;
-    move_picker mp(mlist, last, pos);
+    move_picker mp(mlist, last, pos, ctxt);
 
     while (!mp.done())
       {
       move current = mp.next();
       pos.do_move(current);
-      ++ply;
-      int score = -negamax(pos, -beta, -alpha, depth - 1);
+      ++ctxt.ply;
+      int score = -negamax(pos, -beta, -alpha, depth - 1, ctxt);
       pos.undo_move(current);
-      --ply;
+      --ctxt.ply;
       if (score > alpha)
         {
         /* this move caused a cutoff, so increase the history
          value so it gets ordered high next time we can
          search it */
-        history[from_square(current)][to_square(current)] += depth*depth;
+        ctxt.history[from_square(current)][to_square(current)] += depth*depth;
 
         /* update the PV */
-        pv[ply].moves[ply] = current;
-        for (int j = ply + 1; j < pv[ply + 1].nr_of_moves; ++j)
-          pv[ply].moves[j] = pv[ply + 1].moves[j];
-        pv[ply].nr_of_moves = pv[ply + 1].nr_of_moves;
+        ctxt.pv[ctxt.ply].moves[ctxt.ply] = current;
+        for (int j = ctxt.ply + 1; j < ctxt.pv[ctxt.ply + 1].nr_of_moves; ++j)
+          ctxt.pv[ctxt.ply].moves[j] = ctxt.pv[ctxt.ply + 1].moves[j];
+        ctxt.pv[ctxt.ply].nr_of_moves = ctxt.pv[ctxt.ply + 1].nr_of_moves;
 
-        if (score > beta)
+        if (score >= beta)
           return beta;
         alpha = score;        
         }
@@ -167,7 +172,7 @@ namespace
       {
       /* no legal moves? then we're in checkmate or stalemate */
       if (pos.checkers())
-        return -value_mate + ply;
+        return -value_mate + ctxt.ply;
       else
         return 0;
       }
@@ -179,40 +184,40 @@ namespace
     } //negamax
   } // namespace
 
-void think(position& pos, int output)
+void think(position& pos, int output, search_context& ctxt)
   {
-  if (use_book)
+  if (ctxt.use_book)
     {
     move bm = book_move(pos);
     if (bm != move_none)
       {
-      pv[0].moves[0] = bm;
-      pv[0].nr_of_moves = 1;
+      ctxt.pv[0].moves[0] = bm;
+      ctxt.pv[0].nr_of_moves = 1;
       return;
       }
     }
 
-  memset(pv, 0, sizeof(pv));
-  memset(history, 0, sizeof(history));
+  memset(ctxt.pv, 0, sizeof(ctxt.pv));
+  memset(ctxt.history, 0, sizeof(ctxt.history));
 
   if (output == 1)
     std::cout << "ply      nodes  score  pv\n";
 
-  stop_search = false;
+  ctxt.stop_search = false;
   nodes = 0;
-  ply = 0;
+  ctxt.ply = 0;
   int alpha = -value_mate-max_ply;
   int beta = value_mate+max_ply;
 
   set_start_time();
 
-  for (int d = 1; d <= max_depth; ++d)
+  for (int d = 1; d <= ctxt.max_depth; ++d)
     {
-    checkup();
-    if (stop_search && d > 1)
+    checkup(ctxt);
+    if (ctxt.stop_search && d > 1)
       break;
-    follow_pv = true;
-    int score = negamax(pos, alpha, beta, d);
+    ctxt.follow_pv = true;
+    int score = negamax(pos, alpha, beta, d, ctxt);
     assert(ply == 0);
     if (output == 1)
       {
@@ -224,8 +229,8 @@ void think(position& pos, int output)
       }
     if (output)
       {
-      for (int j = 0; j < pv[0].nr_of_moves; ++j)
-        std::cout << " " << move_to_uci(pv[0].moves[j]);
+      for (int j = 0; j < ctxt.pv[0].nr_of_moves; ++j)
+        std::cout << " " << move_to_uci(ctxt.pv[0].moves[j]);
       std::cout << "\n";
       fflush(stdout);
       }
