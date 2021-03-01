@@ -59,7 +59,7 @@ namespace
     search_context ctxt;
     ctxt.node_limit = 4096;
     ctxt.max_depth = 15;
-    ctxt.move_step = 5;
+    ctxt.move_step = 1;
     std::string fen = "8/8/4K3/3Q4/6k1/8/4B3/r7 b - - 8 56";
     position pos(fen);
     think(pos, 1, ctxt);
