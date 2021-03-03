@@ -20,9 +20,9 @@ search_context ctxt;
 move generate_move(position& pos)
   {
   think(pos, 2, ctxt);
-  if (ctxt.pv[0].nr_of_moves == 0)
+  if (ctxt.main_pv.nr_of_moves == 0)
     return move_none;
-  return ctxt.pv[0].moves[0];
+  return ctxt.main_pv.moves[0];
   }
 
 void print_result(const position& pos)
@@ -93,6 +93,7 @@ void xboard()
       std::cout << "feature setboard=1\n";
       std::cout << "feature variants=\"normal\"\n";
       std::cout << "feature done=1\n";
+      continue;
       }
     if (std::string(command) == std::string("go"))
       {

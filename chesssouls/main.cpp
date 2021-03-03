@@ -28,9 +28,9 @@ namespace
 move generate_move(position& pos, search_context& ctxt)
   {
   think(pos, 2, ctxt);
-  if (ctxt.pv[0].nr_of_moves == 0)
+  if (ctxt.main_pv.nr_of_moves == 0)
     return move_none;
-  return ctxt.pv[0].moves[0];
+  return ctxt.main_pv.moves[0];
   }
 
 void print_result(const position& pos)
@@ -101,8 +101,8 @@ void xboard()
       --moves_left;
       if (moves_left <= 0)
         {
-        moves_left = max_moves;
-        if (max_moves <= 1)
+        moves_left = maximum_moves;
+        if (maximum_moves <= 1)
           time_left = maximum_time;
         else
           time_left += maximum_time;
@@ -128,6 +128,7 @@ void xboard()
       std::cout << "feature setboard=1\n";
       std::cout << "feature variants=\"normal\"\n";
       std::cout << "feature done=1\n";
+      continue;
       }
     if (std::string(command) == std::string("go"))
       {
@@ -276,8 +277,8 @@ int main(int argc, char** argv)
         if (ctxt.time_limit < 0)
           ctxt.time_limit = 0;
         }
-      //if (time_limit > (maximum_time / maximum_moves) * 2)
-      //  time_limit = (maximum_time / maximum_moves) * 2;
+      if (ctxt.time_limit > (maximum_time / maximum_moves) * 2)
+        ctxt.time_limit = (maximum_time / maximum_moves) * 2;
       auto m = generate_move(pos, ctxt);
       if (m == move_none)
         {
@@ -293,8 +294,8 @@ int main(int argc, char** argv)
       --moves_left;
       if (moves_left <= 0)
         {
-        moves_left = max_moves;
-        if (max_moves <= 1)
+        moves_left = maximum_moves;
+        if (maximum_moves <= 1)
           time_left = maximum_time;
         else
           time_left += maximum_time;

@@ -20,6 +20,7 @@ search_context::search_context()
   follow_pv = true;
   ply = 0;
   use_book = true;  
+  move_step = 1;
   }
 
 namespace
@@ -94,6 +95,8 @@ namespace
       score = -quiesce(pos, -beta, -alpha, ctxt);
       pos.undo_move(current);
       --ctxt.ply;
+      if (ctxt.stop_search)
+        return alpha;
       if (score > alpha)
         {
         /* update the PV */
@@ -118,8 +121,8 @@ namespace
       }
     ++nodes;
 
-    //if ((nodes & 1023) == 0)
-    //  checkup();
+    if ((nodes & 1023) == 0)
+      checkup(ctxt);
 
     ctxt.pv[ctxt.ply].nr_of_moves = ctxt.ply;
 
@@ -150,6 +153,8 @@ namespace
       int score = -negamax(pos, -beta, -alpha, depth - 1, ctxt);
       pos.undo_move(current);
       --ctxt.ply;
+      if (ctxt.stop_search)
+        return alpha;
       if (score > alpha)
         {
         /* this move caused a cutoff, so increase the history
@@ -191,14 +196,15 @@ void think(position& pos, int output, search_context& ctxt)
     move bm = book_move(pos);
     if (bm != move_none)
       {
-      ctxt.pv[0].moves[0] = bm;
-      ctxt.pv[0].nr_of_moves = 1;
+      ctxt.main_pv.moves[0] = bm;
+      ctxt.main_pv.nr_of_moves = 1;
       return;
       }
     }
 
   memset(ctxt.pv, 0, sizeof(ctxt.pv));
   memset(ctxt.history, 0, sizeof(ctxt.history));
+  ctxt.main_pv.nr_of_moves = 0;
 
   if (output == 1)
     std::cout << "ply      nodes  score  pv\n";
@@ -218,7 +224,15 @@ void think(position& pos, int output, search_context& ctxt)
       break;
     ctxt.follow_pv = true;
     int score = negamax(pos, alpha, beta, d, ctxt);
-    assert(ply == 0);
+    if (ctxt.pv[0].nr_of_moves > 0)
+      {
+      ctxt.main_pv.nr_of_moves = ctxt.pv[0].nr_of_moves;
+      for (int j = 0; j < ctxt.main_pv.nr_of_moves; ++j)
+        ctxt.main_pv.moves[j] = ctxt.pv[0].moves[j];
+      }
+    assert(ctxt.ply == 0);
+    if (ctxt.stop_search)
+      return;
     if (output == 1)
       {
       std::cout << std::setw(3) << d << "  " << std::setw(9) << nodes << "  " << std::setw(5) << score << " ";
@@ -229,8 +243,8 @@ void think(position& pos, int output, search_context& ctxt)
       }
     if (output)
       {
-      for (int j = 0; j < ctxt.pv[0].nr_of_moves; ++j)
-        std::cout << " " << move_to_uci(ctxt.pv[0].moves[j]);
+      for (int j = 0; j < ctxt.main_pv.nr_of_moves; ++j)
+        std::cout << " " << move_to_uci(ctxt.main_pv.moves[j]);
       std::cout << "\n";
       fflush(stdout);
       }

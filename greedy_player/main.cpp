@@ -108,6 +108,7 @@ void xboard()
       std::cout << "feature setboard=1\n";
       std::cout << "feature variants=\"normal\"\n";
       std::cout << "feature done=1\n";
+      continue;
       }
     if (std::string(command) == std::string("go"))
       {

@@ -146,18 +146,19 @@ void init_eval()
   {
   for (e_square s1 = sq_a1; s1 <= sq_h8; ++s1)
     {
+    uint8_t neg = ~((uint8_t)s1) & 63;
     pcsq[white][pawn][s1] = make_score(pawn_pcsq_mg[s1], pawn_pcsq_eg[s1]);
     pcsq[white][knight][s1] = make_score(knight_pcsq_mg[s1], knight_pcsq_eg[s1]);
     pcsq[white][bishop][s1] = make_score(bishop_pcsq_mg[s1], bishop_pcsq_eg[s1]);
     pcsq[white][rook][s1] = make_score(rook_pcsq_mg[s1], rook_pcsq_eg[s1]);
     pcsq[white][queen][s1] = make_score(queen_pcsq_mg[s1], queen_pcsq_eg[s1]);
     pcsq[white][king][s1] = make_score(king_pcsq_mg[s1], king_pcsq_eg[s1]);
-    pcsq[black][pawn][~s1] = make_score(pawn_pcsq_mg[s1], pawn_pcsq_eg[s1]);
-    pcsq[black][knight][~s1] = make_score(knight_pcsq_mg[s1], knight_pcsq_eg[s1]);
-    pcsq[black][bishop][~s1] = make_score(bishop_pcsq_mg[s1], bishop_pcsq_eg[s1]);
-    pcsq[black][rook][~s1] = make_score(rook_pcsq_mg[s1], rook_pcsq_eg[s1]);
-    pcsq[black][queen][~s1] = make_score(queen_pcsq_mg[s1], queen_pcsq_eg[s1]);
-    pcsq[black][king][~s1] = make_score(king_pcsq_mg[s1], king_pcsq_eg[s1]);
+    pcsq[black][pawn][neg] = make_score(pawn_pcsq_mg[s1], pawn_pcsq_eg[s1]);
+    pcsq[black][knight][neg] = make_score(knight_pcsq_mg[s1], knight_pcsq_eg[s1]);
+    pcsq[black][bishop][neg] = make_score(bishop_pcsq_mg[s1], bishop_pcsq_eg[s1]);
+    pcsq[black][rook][neg] = make_score(rook_pcsq_mg[s1], rook_pcsq_eg[s1]);
+    pcsq[black][queen][neg] = make_score(queen_pcsq_mg[s1], queen_pcsq_eg[s1]);
+    pcsq[black][king][neg] = make_score(king_pcsq_mg[s1], king_pcsq_eg[s1]);
     }
   piece_value[pawn] = make_score(pawn_value_mg, pawn_value_eg);
   piece_value[knight] = make_score(knight_value_mg, knight_value_eg);
