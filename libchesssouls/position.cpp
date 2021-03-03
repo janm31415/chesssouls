@@ -661,6 +661,60 @@ void position::undo_move(move m)
   assert(position_is_ok());
   }
 
+void position::do_null_move()
+  {
+  assert(!checkers());
+  ++nodes;
+  hist_dat[game_ply].m = move_null;
+  hist_dat[game_ply].capture = no_piece;
+  hist_dat[game_ply].castle = _castle;
+  hist_dat[game_ply].ep = ep;
+  hist_dat[game_ply].rule50 = rule50;
+  hist_dat[game_ply].hash = hash;
+  hist_dat[game_ply].checkers = _checkers;
+  hist_dat[game_ply].lazy_piece_value[0] = lazy_piece_value[0];
+  hist_dat[game_ply].lazy_piece_value[1] = lazy_piece_value[1];
+  hist_dat[game_ply].lazy_pawn_value[0] = lazy_pawn_value[0];
+  hist_dat[game_ply].lazy_pawn_value[1] = lazy_pawn_value[1];
+  hist_dat[game_ply].lazy_pcsq[0] = lazy_pcsq[0];
+  hist_dat[game_ply].lazy_pcsq[1] = lazy_pcsq[1];
+  if (ep != sq_none)
+    {
+    hash ^= hash_ep[ep];
+    ep = sq_none;
+    }
+  hash ^= hash_side;
+  ++game_ply;
+  ++rule50;
+  _side_to_move = ~_side_to_move;
+  
+  assert(position_is_ok());
+  }
+
+void position::undo_null_move()
+  {
+  assert(move_null == hist_dat[game_ply - 1].m);
+
+  _side_to_move = ~_side_to_move;
+
+  --game_ply;
+
+  _castle = hist_dat[game_ply].castle;
+  ep = hist_dat[game_ply].ep;
+  rule50 = hist_dat[game_ply].rule50;
+  hash = hist_dat[game_ply].hash;
+  _checkers = hist_dat[game_ply].checkers;
+
+  lazy_piece_value[0] = hist_dat[game_ply].lazy_piece_value[0];
+  lazy_piece_value[1] = hist_dat[game_ply].lazy_piece_value[1];
+  lazy_pawn_value[0] = hist_dat[game_ply].lazy_pawn_value[0];
+  lazy_pawn_value[1] = hist_dat[game_ply].lazy_pawn_value[1];
+  lazy_pcsq[0] = hist_dat[game_ply].lazy_pcsq[0];
+  lazy_pcsq[1] = hist_dat[game_ply].lazy_pcsq[1];
+
+  assert(position_is_ok());
+  }
+
 bool position::position_is_ok() const
   {
   if (_side_to_move != white && _side_to_move != black)

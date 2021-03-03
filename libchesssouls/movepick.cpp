@@ -14,13 +14,17 @@ move_picker::move_picker(move* first, move* last, const position& pos, search_co
     e_square to = to_square(*curr);
     e_piece pc = pos.piece_on(to);
     if (pc != no_piece)
-      _score[curr - _first] = 1000000 + (pc << 4) - pos.piece_on(from);
+      _score[curr - _first] = ctxt.winning_capture_move_ordering_score + (pc << 4) - pos.piece_on(from);
     else
       _score[curr - _first] = ctxt.history[from][to];
-    if (check_pv && *curr == _ctxt.pv[0].moves[_ctxt.ply])
+    if (check_pv && *curr == _ctxt.main_pv.moves[_ctxt.ply])
       {
       _ctxt.follow_pv = true;
-      _score[curr - _first] += 10000000;
+      _score[curr - _first] += ctxt.pv_move_ordering_score;
+      }
+    if (*curr == ctxt.hash_move[0] || *curr == ctxt.hash_move[1])
+      {
+      _score[curr - _first] += ctxt.hash_move_ordering_score;
       }
     }
 

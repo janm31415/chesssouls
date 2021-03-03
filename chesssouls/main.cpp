@@ -8,6 +8,7 @@
 #include <libchesssouls/movegen.h>
 #include <libchesssouls/notation.h>
 #include <libchesssouls/search.h>
+#include <libchesssouls/trans.h>
 
 #include <string>
 #include <chrono>
@@ -255,6 +256,7 @@ int main(int argc, char** argv)
   init_bitboards();
   init_hash();
   init_eval();
+  init_transposition_table();
   read_book("");
   std::string fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
   position pos(fen);
@@ -376,6 +378,6 @@ int main(int argc, char** argv)
       print_result(pos);
       }
     }
-
+  destroy_transposition_table();
   return 0;
   }

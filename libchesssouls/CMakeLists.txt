@@ -11,6 +11,7 @@ notation.h
 perft.h
 position.h
 search.h
+trans.h
 types.h
 )
 	
@@ -26,6 +27,7 @@ notation.cpp
 perft.cpp
 position.cpp
 search.cpp
+trans.cpp
 )
 
 if (WIN32)

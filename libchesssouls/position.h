@@ -144,9 +144,16 @@ class position
       return lazy_pcsq[c];
       }
 
+    uint64_t zobrist_key() const
+      {
+      return hash;
+      }
+
     LIB_CHESSSOULS_API void do_move(move m);
     LIB_CHESSSOULS_API move last_move() const;
     LIB_CHESSSOULS_API void undo_move(move m);
+    void do_null_move();
+    void undo_null_move();
 
   private:
     bitboard _check_blockers(e_color c, e_color king_color) const;
