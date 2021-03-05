@@ -20,8 +20,8 @@ namespace
     std::string fen = "r1b1k1nr/p1b4p/4p1p1/3p1p2/K3p3/8/P1P2q1P/8 b kq - 1 22";
     position pos(fen);
     think(pos, 0, ctxt);
-    TEST_EQ(5, ctxt.pv[0].nr_of_moves);
-    TEST_EQ(842, ctxt.pv[0].moves[0]);
+    TEST_EQ(1, ctxt.main_pv.nr_of_moves);
+    TEST_EQ(842, ctxt.main_pv.moves[0]);
     }
 
   void test_bug_2()
@@ -34,8 +34,8 @@ namespace
     std::string fen = "B7/4Q3/7k/6B1/3P3N/P7/P1P2KPP/R4R2 b - -4 27";
     position pos(fen);
     think(pos, 0, ctxt);
-    TEST_ASSERT(ctxt.pv[0].nr_of_moves > 0);
-    TEST_EQ(3047, ctxt.pv[0].moves[0]);
+    TEST_ASSERT(ctxt.main_pv.nr_of_moves > 0);
+    TEST_EQ(3047, ctxt.main_pv.moves[0]);
     }
 
   void test_bug_3()
@@ -50,8 +50,8 @@ namespace
     move m = make_move(sq_d3, sq_f5);
     pos.do_move(m);
     think(pos, 0, ctxt);
-    TEST_ASSERT(ctxt.pv[0].nr_of_moves > 0);
-    TEST_EQ(2853, ctxt.pv[0].moves[0]);
+    TEST_ASSERT(ctxt.main_pv.nr_of_moves > 0);
+    TEST_EQ(2853, ctxt.main_pv.moves[0]);
     }
 
   void test_bug_4()
@@ -63,8 +63,8 @@ namespace
     std::string fen = "8/8/4K3/3Q4/6k1/8/4B3/r7 b - - 8 56";
     position pos(fen);
     think(pos, 1, ctxt);
-    TEST_ASSERT(ctxt.pv[0].nr_of_moves > 0);
-    TEST_EQ(1942, ctxt.pv[0].moves[0]);
+    TEST_ASSERT(ctxt.main_pv.nr_of_moves > 0);
+    TEST_EQ(1951, ctxt.main_pv.moves[0]);
     }
 
   void test_bug_5()
@@ -76,22 +76,27 @@ namespace
     ctxt.node_limit = 4096;
     position pos(fen);
     think(pos, 0, ctxt);
-    TEST_ASSERT(ctxt.pv[0].nr_of_moves > 0);
-    TEST_EQ(31865, ctxt.pv[0].moves[0]);
+    TEST_ASSERT(ctxt.main_pv.nr_of_moves > 0);
+    TEST_EQ(31865, ctxt.main_pv.moves[0]);
     }
 
   void test_bug_6()
     {
     search_context ctxt;
-    std::string fen = "rnbq1rk1/pppp1ppp/4pn2/8/1bPP4/2N5/PP1BPPPP/R2QKBNR w KQ - 4 5";
+    ctxt.use_aspiration_window = false;
+    std::string fen = "3q4/7p/8/5K2/3k4/8/8/8 b - - 31 140";
     ctxt.max_depth = max_ply;
     ctxt.move_step = 1;
     ctxt.node_limit = std::numeric_limits<uint64_t>::max();
-    ctxt.time_limit = 5000;
+    ctxt.time_limit = 10000;
     position pos(fen);
     think(pos, 1, ctxt);
-
+    think(pos, 1, ctxt);
     }
+
+
+
+  //3q4 / 7p / 8 / 5K2 / 3k4 / 8 / 8 / 8 b - -31 140
   }
 
 void run_all_search_tests()

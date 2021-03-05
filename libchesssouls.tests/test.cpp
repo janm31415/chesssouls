@@ -6,6 +6,7 @@
 #include <libchesssouls/bitboard.h>
 #include <libchesssouls/eval.h>
 #include <libchesssouls/hash.h>
+#include <libchesssouls/trans.h>
 
 #include <ctime>
 
@@ -16,12 +17,15 @@ int main(int /*argc*/, const char* /*argv*/[])
   init_bitboards();
   init_hash();
   init_eval();
+  init_transposition_table();
 
   auto tic = std::clock();
   run_all_search_tests();
   run_all_position_tests();
   run_all_movegen_tests();  
   auto toc = std::clock();
+
+  destroy_transposition_table();
 
   if (!testing_fails) 
     {

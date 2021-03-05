@@ -24,6 +24,7 @@ struct search_context
   int hash_move_ordering_score;
   int pv_move_ordering_score;
   int winning_capture_move_ordering_score;
+  bool use_aspiration_window;
   int aspiration_window_size;
   int aspiration_window_correction;
   bool null_move_pruning;

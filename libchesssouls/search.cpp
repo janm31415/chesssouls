@@ -22,7 +22,7 @@ search_context::search_context()
   ply = 0;
   use_book = true;  
   move_step = 1;
-  fail_soft = true;
+  fail_soft = false;
   use_transposition = true;
   hash_move[0] = 0;
   hash_move[1] = 0;
@@ -33,6 +33,7 @@ search_context::search_context()
   aspiration_window_correction = 25;
   null_move_pruning = true;
   null_move_reduction = 2;
+  use_aspiration_window = true;
   }
 
 namespace
@@ -190,8 +191,8 @@ namespace
     if ((nodes & 1023) == 0)
       checkup(ctxt);
 
-    int bestscore = -10000;
-    int score = -10000;
+    int bestscore = -value_mate;
+    int score = -value_mate;
     move best_move = move_none;
 
     ctxt.pv[ctxt.ply].nr_of_moves = ctxt.ply;
@@ -369,27 +370,30 @@ void think(position& pos, int output, search_context& ctxt)
       std::cout << "\n";
       fflush(stdout);
       }
-    if (score <= alpha)
+    if (ctxt.use_aspiration_window)
       {
-      ++aspiration_fail_alpha;
-      alpha = score - ctxt.aspiration_window_correction;
-      if (aspiration_fail_alpha > 2)
-        alpha = -10000;
-      continue;
+      if (score <= alpha)
+        {
+        ++aspiration_fail_alpha;
+        alpha = score - ctxt.aspiration_window_correction;
+        if (aspiration_fail_alpha > 2)
+          alpha = std::min((int)-value_mate, alpha);
+        continue;
+        }
+      if (score >= beta)
+        {
+        ++aspiration_fail_beta;
+        beta = score + ctxt.aspiration_window_correction;
+        if (aspiration_fail_beta > 2)
+          beta = std::max((int)value_mate, beta);
+        continue;
+        }
+      alpha = score - ctxt.aspiration_window_size;
+      beta = score + ctxt.aspiration_window_size;      
+      aspiration_fail_alpha = 0;
+      aspiration_fail_beta = 0;
       }
-    if (score >= beta)
-      {
-      ++aspiration_fail_beta;
-      beta = score + ctxt.aspiration_window_correction;
-      if (aspiration_fail_beta > 2)
-        beta = 10000;
-      continue;
-      }
-    alpha = score - ctxt.aspiration_window_size;
-    beta = score + ctxt.aspiration_window_size;
     ++d;
-    aspiration_fail_alpha = 0;
-    aspiration_fail_beta = 0;
     }
 
   }

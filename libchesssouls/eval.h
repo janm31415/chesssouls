@@ -17,8 +17,19 @@ LIB_CHESSSOULS_API int eval(const position& pos);
 
 typedef int score;
 
-inline score make_score(int mid_game, int end_game) { return (mid_game << 16) + end_game; }
+inline score make_score(int mid_game, int end_game) { return ((uint32_t)mid_game << 16) + end_game; }
 
+inline int eg_value(score s) 
+  {
+  union { uint16_t u; int16_t s; } eg = { uint16_t(unsigned(s + 0x8000) >> 16) };
+  return (int)(eg.s);
+  }
+
+inline int mg_value(score s) 
+  {
+  union { uint16_t u; int16_t s; } mg = { uint16_t(unsigned(s)) };
+  return (int)(mg.s);
+  }
 
 enum e_value
   {
@@ -34,7 +45,7 @@ enum e_value
   queen_value_eg = 1200,
   midgame_limit = 7500,
   endgame_limit = 2000,
-  value_mate = 32000,
+  value_mate = 10000,
 
 
   value_max = std::numeric_limits<int>::max(),

@@ -61,6 +61,11 @@ namespace
     std::string fen14("1rb2rk1/p4ppp/1p1qp1n1/3n2N1/2pP4/2P3P1/PPQ2PBP/R1B1R1K1 w - - 0 1");
     p.set_fen(fen14);
     TEST_EQ(fen14, p.fen());
+
+    std::string fen15("3q4/7p/8/5K2/3k4/8/8/8 b - - 31 140");
+    p.set_fen(fen15);
+    TEST_EQ(fen15, p.fen());
+
     }
   }
 

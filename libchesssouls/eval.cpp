@@ -179,17 +179,17 @@ int eval(const position& pos)
   int pos_white = pos.positional_value(white);
   int pos_black = pos.positional_value(black);
 
-  int mat_white_mg = mat_white >> 16;
-  int mat_black_mg = mat_black >> 16;
+  int mat_white_mg = mg_value(mat_white);
+  int mat_black_mg = mg_value(mat_black);
 
   int score_white = mat_white + pawn_white + pos_white;
   int score_black = mat_black + pawn_black + pos_black;
 
-  int score_white_mg = score_white >> 16;
-  int score_black_mg = score_black >> 16;
+  int score_white_mg = mg_value(score_white);
+  int score_black_mg = mg_value(score_black);
 
-  int score_white_eg = score_white & 0xffff;
-  int score_black_eg = score_black & 0xffff;
+  int score_white_eg = eg_value(score_white);
+  int score_black_eg = eg_value(score_black);
 
   int ph = mat_white_mg + mat_black_mg;
   ph = (ph * 256 + total_piece_score_opening) / (2 * total_piece_score_opening);
