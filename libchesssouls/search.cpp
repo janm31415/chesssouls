@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <chrono>
 #include <limits>
+#include <algorithm>
 
 search_context::search_context()
   {

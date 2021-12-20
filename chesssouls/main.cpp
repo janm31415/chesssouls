@@ -182,7 +182,7 @@ int main(int argc, char** argv)
       }
     if (std::string(command) == std::string("new"))
       {
-      computer_side = color_end;
+      computer_side = black;
       pos.set_fen(fen);
       continue;
       }
@@ -203,7 +203,7 @@ int main(int argc, char** argv)
       {
       std::cout << "feature myname=\" Chess Souls 1.0 \"\n";
       std::cout << "feature done=0\n";
-      std::cout << "feature ping = 1\n";
+      std::cout << "feature ping=1\n";
       std::cout << "feature memory=1\n";
       std::cout << "feature setboard=1\n";
       std::cout << "feature variants=\"normal\"\n";

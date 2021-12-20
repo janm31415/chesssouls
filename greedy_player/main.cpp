@@ -103,7 +103,7 @@ void xboard()
       {
       std::cout << "feature myname=\" Greedy player \"\n";
       std::cout << "feature done=0\n";
-      std::cout << "feature ping = 1\n";
+      std::cout << "feature ping=1\n";
       std::cout << "feature memory=1\n";
       std::cout << "feature setboard=1\n";
       std::cout << "feature variants=\"normal\"\n";
