@@ -29,6 +29,11 @@ struct search_context
   int aspiration_window_correction;
   bool null_move_pruning;
   int null_move_reduction;
+  bool internal_iterative_deepening;
+  bool late_move_reduction;
+  int delta_pruning_margin;
+  bool delta_pruning;
+  bool check_in_quiesce;
   };
 
 LIB_CHESSSOULS_API void think(position& pos, int output, search_context& ctxt);

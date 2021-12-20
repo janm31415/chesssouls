@@ -35,6 +35,11 @@ search_context::search_context()
   null_move_pruning = true;
   null_move_reduction = 2;
   use_aspiration_window = true;
+  internal_iterative_deepening = true;
+  late_move_reduction = true;
+  delta_pruning_margin = 500;
+  delta_pruning = true;
+  check_in_quiesce = true;
   }
 
 namespace
@@ -115,7 +120,6 @@ namespace
 
   int quiesce(position& pos, int alpha, int beta, search_context& ctxt)
     {    
-
     ++nodes;
 
     if ((nodes & 1023) == 0)
@@ -128,6 +132,7 @@ namespace
 
     int score = eval(pos);
     int bestscore = score;
+    int material = score;
 
     if (ctxt.stop_search)
       return 0;
@@ -139,7 +144,7 @@ namespace
 
     move mlist[max_moves];
     move* last;
-    if (pos.checkers())
+    if (ctxt.check_in_quiesce && pos.checkers())
       last = generate<legal>(pos, mlist);
     else
       last = generate<captures>(pos, mlist);
@@ -153,6 +158,26 @@ namespace
       move current = mp.next();
       if (!pos.legal(current, pinned))
         continue;
+
+      if (ctxt.delta_pruning && !pos.checkers() && !pos.endgame())
+        {
+        int cap = material;
+        if (type_of(current) == enpassant)
+          {
+          cap += piece_value_see[pawn];
+          }
+        else if (type_of(current) == promotion)
+          {
+          cap += piece_value_see[type_of(pos.piece_on(to_square(current)))] - piece_value_see[pawn];
+          }
+        else
+          {
+          cap += piece_value_see[type_of(pos.piece_on(to_square(current)))];
+          }
+        if (cap < (alpha - ctxt.delta_pruning_margin))
+          continue;
+        }
+
       pos.do_move(current);
       ++ctxt.ply;
       score = -quiesce(pos, -beta, -alpha, ctxt);
@@ -238,23 +263,57 @@ namespace
         }        
       }
 
+    // internal iterative deepening
+    if (ctxt.use_transposition && ctxt.internal_iterative_deepening)
+      {
+      if (ctxt.hash_move[0] == 0 && expected_node_type == PV_NODE && depth > 6 && ctxt.ply > 1 && allow_null_move_pruning)
+        {
+        int new_depth = depth - 2;
+        auto temp_score = negamax(pos, alpha, beta, new_depth, allow_null_move_pruning, expected_node_type, ctxt);
+        if (temp_score > alpha)
+          {
+          if (temp_score < beta)
+            {
+            probe_hash(pos, ctxt, transposition, ctxt.hash_move, temp_score, depth, alpha, beta);            
+            }
+          }
+        }
+      }
+
     move mlist[max_moves];
     move* last = generate<legal>(pos, mlist);   
     *last = move_none;
     move_picker mp(mlist, last, pos, ctxt);
 
+    int move_count = 0;
+
     while (!mp.done())
       {
       move current = mp.next();
       pos.do_move(current);
+
+      int reduction = 0;
+      ++move_count;
+      if (ctxt.late_move_reduction && move_count > 4 && depth >= 3 && !pos.checkers() && !ctxt.follow_pv && node_type != PV_NODE && ctxt.ply > 2 && !pos.capture_or_promotion(current))
+        {
+        if (move_count <= 10)
+          ++reduction;
+        else
+          reduction += 2;
+        }
+
       ++ctxt.ply;
       if ((expected_node_type != PV_NODE && node_type != PV_NODE))
-        score = -negamax(pos, -beta, -alpha, depth - 1, ctxt.null_move_pruning, OPPOSITE(expected_node_type), ctxt);
+        score = -negamax(pos, -beta, -alpha, depth - reduction - 1, ctxt.null_move_pruning, OPPOSITE(expected_node_type), ctxt);
       else
         {
-        score = -negamax(pos, -alpha-1, -alpha, depth - 1, ctxt.null_move_pruning, BETA_NODE, ctxt);  // scout search are cut nodes
+        score = -negamax(pos, -alpha-1, -alpha, depth - reduction - 1, ctxt.null_move_pruning, BETA_NODE, ctxt);  // scout search are cut nodes
         if (score > alpha)
-          score = -negamax(pos, -beta, -alpha, depth - 1, ctxt.null_move_pruning, PV_NODE, ctxt); // Children of PV-nodes that have to be re-searched because the scout search failed high, are PV-nodes
+          score = -negamax(pos, -beta, -alpha, depth - reduction - 1, ctxt.null_move_pruning, PV_NODE, ctxt); // Children of PV-nodes that have to be re-searched because the scout search failed high, are PV-nodes
+        }
+      if (reduction && score >= beta) // search again if we reduced and get a cut
+        {
+        score = -negamax(pos, -beta, -alpha, depth - 1, ctxt.null_move_pruning, OPPOSITE(expected_node_type), ctxt);
         }
       pos.undo_move(current);
       --ctxt.ply;

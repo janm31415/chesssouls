@@ -20,7 +20,7 @@ namespace
     std::string fen = "r1b1k1nr/p1b4p/4p1p1/3p1p2/K3p3/8/P1P2q1P/8 b kq - 1 22";
     position pos(fen);
     think(pos, 0, ctxt);
-    TEST_EQ(1, ctxt.main_pv.nr_of_moves);
+    TEST_EQ(5, ctxt.main_pv.nr_of_moves);
     TEST_EQ(842, ctxt.main_pv.moves[0]);
     }
 
@@ -64,7 +64,7 @@ namespace
     position pos(fen);
     think(pos, 1, ctxt);
     TEST_ASSERT(ctxt.main_pv.nr_of_moves > 0);
-    TEST_EQ(1951, ctxt.main_pv.moves[0]);
+    TEST_EQ(1943, ctxt.main_pv.moves[0]);
     }
 
   void test_bug_5()

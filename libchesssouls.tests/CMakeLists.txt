@@ -1,6 +1,7 @@
 
 set(HDRS
 test_assert.h
+test_eval.h
 test_movegen.h
 test_position.h
 test_search.h
@@ -8,6 +9,7 @@ test_search.h
 	
 set(SRCS
 test_assert.cpp
+test_eval.cpp
 test_movegen.cpp
 test_position.cpp
 test_search.cpp

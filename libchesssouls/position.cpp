@@ -258,6 +258,22 @@ e_piece position::moved_piece(move m) const
   return board[from_square(m)];
   }
 
+bool position::capture(move m) const
+  {
+  return (!empty(to_square(m)) && type_of(m) != castling) || type_of(m) == enpassant;
+  }
+
+bool position::capture_or_promotion(move m) const
+  {
+  return type_of(m) != normal ? type_of(m) != castling : !empty(to_square(m));
+  }
+
+bool position::endgame() const
+  {
+  const int endgame_threshold = queen_value_mg + bishop_value_mg;
+  return (lazy_piece_value[0] <= endgame_threshold) || (lazy_piece_value[1] <= endgame_threshold);
+  }
+
 bitboard position::pieces() const
   {
   return bb_by_type[all_pieces];

@@ -45,6 +45,9 @@ class position
     bool empty(e_square s) const;
     e_piece piece_on(e_square s) const;
     e_piece moved_piece(move m) const;
+    bool capture(move m) const;
+    bool capture_or_promotion(move m) const;
+    bool endgame() const;
 
     LIB_CHESSSOULS_API void set_side_to_move(e_color c)
       {
