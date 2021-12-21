@@ -147,7 +147,7 @@ int pcsq[2][7][nr_squares];
 int piece_value[7];
 int piece_value_see[7];
 
-int piece_to_attack_value[7] = {0, 0, 20, 20, 40, 80, 10};
+int piece_to_attack_value[7] = {0, 0, 20, 20, 40, 80, 0};
 int nr_of_attackers_to_weight[] = { 0, 0, 50, 75, 88, 94, 97, 99, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100
 , 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100 };
 
@@ -282,6 +282,7 @@ void init_squares_near_king()
             squares_near_king[1][i][j] = 1;
             }
           }
+        /*
         if (i == j + steps[d] - 8)
           {
           if (square_distance(e_square(i), e_square(j)) < 3)
@@ -292,6 +293,7 @@ void init_squares_near_king()
           if (square_distance(e_square(i), e_square(j)) < 3)
             squares_near_king[1][i][j] = 1;
           }
+        */
         }
       }
     }
@@ -848,8 +850,8 @@ int eval(const position& pos)
   eval_data.WhiteKingSafety = ((eval_data.WhiteKingShield - eval_data.TropismToWhiteKing) * mat_black_mg) / total_piece_score_opening;
   eval_data.BlackKingSafety = ((eval_data.BlackKingShield - eval_data.TropismToBlackKing) * mat_white_mg) / total_piece_score_opening;
 
-  eval_data.AttackWhiteKingScore = 0;//eval_data.attack_value[1] * nr_of_attackers_to_weight[eval_data.attack[1]] / 100;
-  eval_data.AttackBlackKingScore = 0;//eval_data.attack_value[0] * nr_of_attackers_to_weight[eval_data.attack[0]] / 100;
+  eval_data.AttackWhiteKingScore = eval_data.attack_value[1] * nr_of_attackers_to_weight[eval_data.attack[1]] / 100;
+  eval_data.AttackBlackKingScore = eval_data.attack_value[0] * nr_of_attackers_to_weight[eval_data.attack[0]] / 100;
 
   eval_data.WhiteMobilityScore = (log_table[eval_data.mobility[0]]);
   eval_data.BlackMobilityScore = (log_table[eval_data.mobility[1]]);

@@ -85,10 +85,10 @@ enum e_value
   trapped_bishop = 100,
   blocked_bishop = 50,
   blocked_rook = 50,
-  knight_attack_value = 40,
-  bishop_attack_value = 10,
+  knight_attack_value = 20,
+  bishop_attack_value = 20,
   rook_attack_value = 40,
-  queen_attack_value = 100,
+  queen_attack_value = 80,
 
   lazy_eval_margin = 250
   };

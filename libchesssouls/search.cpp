@@ -46,7 +46,7 @@ search_context::search_context()
   late_move_reduction = true;
   delta_pruning_margin = 500;
   delta_pruning = true;  
-  max_history_ply = -1;
+  max_history_ply = 10;
   }
 
 namespace

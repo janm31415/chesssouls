@@ -38,7 +38,7 @@ move_picker::move_picker(move* first, move* last, const position& pos, search_co
       }
     else
       {
-      _score[curr - _first] = ctxt.history_move_ordering_score + /*ctxt.history[from][to] +*/ pos.move_ordering_score(*curr);
+      _score[curr - _first] = ctxt.history_move_ordering_score + ctxt.history[from][to];// + pos.move_ordering_score(*curr);
       }
     if (check_pv && *curr == _ctxt.main_pv.moves[_ctxt.ply])
       {
