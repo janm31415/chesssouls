@@ -152,6 +152,8 @@ class position
       return hash;
       }
 
+    uint64_t compute_evaluation_zobrist_key() const;
+
     int move_ordering_score(move m) const;
 
     LIB_CHESSSOULS_API void do_move(move m);

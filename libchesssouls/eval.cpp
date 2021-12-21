@@ -1,6 +1,10 @@
 #include "eval.h"
 #include "position.h"
 
+#include "pawn.h"
+#include "king.h"
+#include "eval_table.h"
+
 namespace
   {
   int pawn_pcsq_mg[nr_squares] = {
@@ -750,6 +754,35 @@ void eval_queens(const position& pos)
     }
   }
 
+int eval_lazy(const position& pos)
+  {
+  int mat_white = pos.non_pawn_material_value(white);
+  int mat_black = pos.non_pawn_material_value(black);
+  int pawn_white = pos.pawn_material_value(white);
+  int pawn_black = pos.pawn_material_value(black);
+  int pos_white = pos.positional_value(white);
+  int pos_black = pos.positional_value(black);
+
+  int mat_white_mg = mg_value(mat_white);
+  int mat_black_mg = mg_value(mat_black);
+
+  int score_white = mat_white + pawn_white + pos_white;
+  int score_black = mat_black + pawn_black + pos_black;
+
+  int score_white_mg = mg_value(score_white);
+  int score_black_mg = mg_value(score_black);
+
+  int score_white_eg = eg_value(score_white);
+  int score_black_eg = eg_value(score_black);
+
+  int ph = mat_white_mg + mat_black_mg;
+  ph = (ph * 256 + total_piece_score_opening) / (2 * total_piece_score_opening);
+
+  int sc = (ph * (score_white_mg - score_black_mg) + (256 - ph) * (score_white_eg - score_black_eg)) / 256;
+
+  return pos.side_to_move() == white ? sc : -sc;
+  }
+
 int eval(const position& pos)
   {
   PR = 0x3fffffff;
@@ -830,6 +863,29 @@ int eval(const position& pos)
   int sc = (ph*(score_white_mg - score_black_mg) + (256 - ph)*(score_white_eg - score_black_eg)) / 256;
 
   return pos.side_to_move() == white ? sc : -sc;  
+  }
+
+int eval(const position& pos, int alpha, int beta)
+  {
+  uint64_t eval_hash = pos.compute_evaluation_zobrist_key();
+  int32_t eval_white;
+  bool eval_hit = find_in_eval_table(evaltable, eval_hash, eval_white);
+  if (eval_hit)
+    {
+    return (pos.side_to_move() == white) ? eval_white : -eval_white;
+    }
+  int score = eval_lazy(pos);
+  if (score - lazy_eval_margin >= beta)
+    {
+    return score;
+    }
+  if (score + lazy_eval_margin > alpha)
+    {
+    score = eval(pos);
+    eval_white = (pos.side_to_move() == white) ? score : -score;
+    store_in_eval_table(evaltable, eval_hash, eval_white);
+    }
+  return score;
   }
 
 void print_eval(std::ostream& str, const position& pos)

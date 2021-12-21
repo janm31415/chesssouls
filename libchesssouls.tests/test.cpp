@@ -8,6 +8,9 @@
 #include <libchesssouls/eval.h>
 #include <libchesssouls/hash.h>
 #include <libchesssouls/trans.h>
+#include <libchesssouls/eval_table.h>
+#include <libchesssouls/pawn.h>
+#include <libchesssouls/king.h>
 
 #include <ctime>
 
@@ -19,6 +22,9 @@ int main(int /*argc*/, const char* /*argv*/[])
   init_hash();
   init_eval();
   init_transposition_table();
+  init_king_table();
+  init_pawn_table();
+  init_eval_table();
 
   auto tic = std::clock();
   run_all_eval_tests();
@@ -28,6 +34,9 @@ int main(int /*argc*/, const char* /*argv*/[])
   auto toc = std::clock();
 
   destroy_transposition_table();
+  destroy_eval_table();
+  destroy_pawn_table();
+  destroy_king_table();
 
   if (!testing_fails) 
     {

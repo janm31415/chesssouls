@@ -13,7 +13,7 @@
 #include <limits>
 #include <algorithm>
 
-#define BETA_FIRST
+//#define BETA_FIRST
 
 search_context::search_context()
   {
@@ -23,9 +23,9 @@ search_context::search_context()
   stop_search = false;
   follow_pv = true;
   ply = 0;
-  use_book = false;  
+  use_book = true;  
   move_step = 1;
-  fail_soft = false;
+  fail_soft = true;
   use_transposition = true;
   hash_move[0] = 0;
   hash_move[1] = 0;
@@ -135,9 +135,9 @@ namespace
     ctxt.pv[ctxt.ply].nr_of_moves = ctxt.ply;
 
     if (ctxt.ply >= max_ply - 1)
-      return eval(pos);
+      return eval(pos, alpha, beta);
 
-    int score = eval(pos);
+    int score = eval(pos, alpha, beta);
     int bestscore = score;
     int material = score;
 
@@ -255,7 +255,7 @@ namespace
       }
 
     if (ctxt.ply >= max_ply - 1)
-      return eval(pos);
+      return eval(pos, alpha, beta);
 
     int node_type = ALPHA_NODE;
 

@@ -9,6 +9,9 @@
 #include <libchesssouls/notation.h>
 #include <libchesssouls/search.h>
 #include <libchesssouls/trans.h>
+#include <libchesssouls/eval_table.h>
+#include <libchesssouls/pawn.h>
+#include <libchesssouls/king.h>
 
 #include <string>
 #include <chrono>
@@ -76,6 +79,10 @@ int main(int argc, char** argv)
   init_hash();
   init_eval();
   init_transposition_table();
+  init_eval_table();
+  init_pawn_table();
+  init_king_table();
+
   read_book("");
   std::string fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
   //std::string fen("3q4/7p/8/5K2/3k4/8/8/8 b - - 31 140");
@@ -351,6 +358,9 @@ int main(int argc, char** argv)
       }
     }
   destroy_transposition_table();
+  destroy_eval_table();
+  destroy_pawn_table();
+  destroy_king_table();
   if (logging)
     fclose(logging);
   return 0;

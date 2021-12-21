@@ -16,6 +16,8 @@ extern int piece_value_see[7];
 LIB_CHESSSOULS_API void init_eval();
 
 LIB_CHESSSOULS_API int eval(const position& pos);
+LIB_CHESSSOULS_API int eval_lazy(const position& pos);
+LIB_CHESSSOULS_API int eval(const position& pos, int alpha, int beta);
 
 typedef int score;
 
@@ -86,7 +88,9 @@ enum e_value
   knight_attack_value = 40,
   bishop_attack_value = 10,
   rook_attack_value = 40,
-  queen_attack_value = 100
+  queen_attack_value = 100,
+
+  lazy_eval_margin = 250
   };
 
 LIB_CHESSSOULS_API void print_eval(std::ostream& str, const position& pos);

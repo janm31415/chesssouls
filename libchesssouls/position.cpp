@@ -980,3 +980,14 @@ int position::see(move m, int asymmThreshold) const
 
     return swapList[0];
   }
+
+uint64_t position::compute_evaluation_zobrist_key() const
+  {
+  // evaluation hash is independent from side to play or en passant square
+  uint64_t h = hash;
+  if (_side_to_move == black)
+    h ^= hash_side;
+  if (ep_square() != sq_none)
+    h ^= hash_ep[ep_square()];
+  return h;
+  }
