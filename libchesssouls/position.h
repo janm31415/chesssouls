@@ -13,6 +13,7 @@ struct hist_t
   e_square ep;
   int rule50;
   uint64_t hash;
+  uint64_t pawn_hash;
   e_piece capture;  
   bitboard checkers;
   int lazy_piece_value[2];
@@ -152,6 +153,13 @@ class position
       return hash;
       }
 
+    uint64_t pawn_zobrist_key() const
+      {
+      return pawn_hash;
+      }
+
+    uint64_t king_zobrist_key() const;
+
     uint64_t compute_evaluation_zobrist_key() const;
 
     int move_ordering_score(move m) const;
@@ -169,6 +177,7 @@ class position
     void do_castling(e_square from, e_square& to, e_square& rfrom, e_square& rto);
     void undo_castling(e_square from, e_square& to, e_square& rfrom, e_square& rto);
     uint64_t _compute_hash() const;
+    uint64_t _compute_pawn_hash() const;
     void _compute_lazy_material(int* lazy_piece_v, int* lazy_pawn_v, int* lazy_sq) const;
 
   private:
@@ -186,6 +195,7 @@ class position
     int rule50;
     int game_ply;
     uint64_t hash;
+    uint64_t pawn_hash;
     hist_t hist_dat[5899];
     uint64_t nodes;
     int lazy_piece_value[2];

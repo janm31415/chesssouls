@@ -408,9 +408,22 @@ uint64_t position::_compute_hash() const
   return h;
   }
 
+uint64_t position::_compute_pawn_hash() const
+  {
+  uint64_t h = 0;
+  for (bitboard b = pieces(pawn); b; )
+    {
+    e_square s = pop_least_significant_bit(b);
+    e_piece pc = piece_on(s);
+    h ^= hash_piece[color_of(pc)][pawn][s];
+    }  
+  return h;
+  }
+
 void position::set_hash()
   {
   hash = _compute_hash();
+  pawn_hash = _compute_pawn_hash();
   }
 
 void position::_compute_lazy_material(int* lazy_piece_v, int* lazy_pawn_v, int* lazy_sq) const
@@ -492,6 +505,7 @@ void position::do_move(move m)
   hist_dat[game_ply].ep = ep;
   hist_dat[game_ply].rule50 = rule50;
   hist_dat[game_ply].hash = hash;
+  hist_dat[game_ply].pawn_hash = pawn_hash;
   hist_dat[game_ply].checkers = _checkers;
   hist_dat[game_ply].lazy_piece_value[0] = lazy_piece_value[0];
   hist_dat[game_ply].lazy_piece_value[1] = lazy_piece_value[1];
@@ -537,9 +551,11 @@ void position::do_move(move m)
         assert(relative_rank(my_color, to) == rank_6);
         assert(piece_on(to) == no_piece);
         assert(piece_on(capsq) == make_piece(other_color, pawn));
-
+        pawn_hash ^= hash_piece[other_color][pawn][capsq];
         board[capsq] = no_piece;
         }
+      else
+        pawn_hash ^= hash_piece[other_color][pawn][to];
       lazy_pawn_value[other_color] -= piece_value[captured];
       }
     else
@@ -567,12 +583,14 @@ void position::do_move(move m)
 
   if (pt == pawn)
     {
+    pawn_hash ^= hash_piece[my_color][pawn][from];
     // Set en-passant square if the moved pawn can be captured
     if ((int(to) ^ int(from)) == 16
       && (attacks_from_pawn(from + pawn_push(my_color), my_color) & pieces(other_color, pawn)))
       {
       ep = e_square((from + to) / 2);
       hash ^= hash_ep[ep];
+      pawn_hash ^= hash_piece[my_color][pawn][to];
       }
     else if (type_of(m) == promotion)
       {
@@ -588,8 +606,9 @@ void position::do_move(move m)
       lazy_pawn_value[my_color] -= piece_value[pawn];
       lazy_piece_value[my_color] += piece_value[promotion];
       lazy_pcsq[my_color] += pcsq[my_color][promotion][to] - pcsq[my_color][pawn][to];
-
       }
+    else
+      pawn_hash ^= hash_piece[my_color][pawn][to];
     rule50 = 0;
     }
   lazy_pcsq[my_color] += pcsq[my_color][pt][to] - pcsq[my_color][pt][from];
@@ -676,6 +695,7 @@ void position::undo_move(move m)
   ep = hist_dat[game_ply].ep;
   rule50 = hist_dat[game_ply].rule50;
   hash = hist_dat[game_ply].hash;
+  pawn_hash = hist_dat[game_ply].pawn_hash;
   _checkers = hist_dat[game_ply].checkers;
 
   lazy_piece_value[0] = hist_dat[game_ply].lazy_piece_value[0];
@@ -785,6 +805,9 @@ bool position::position_is_ok() const
           return false;
 
   if (_compute_hash() != hash)
+    return false;
+
+  if (_compute_pawn_hash() != pawn_hash)
     return false;
 
   int lazy_piece_v[2];
@@ -989,5 +1012,13 @@ uint64_t position::compute_evaluation_zobrist_key() const
     h ^= hash_side;
   if (ep_square() != sq_none)
     h ^= hash_ep[ep_square()];
+  return h;
+  }
+
+uint64_t position::king_zobrist_key() const
+  {
+  uint64_t h = pawn_hash;
+  h ^= hash_piece[white][king][king_square(white)];
+  h ^= hash_piece[black][king][king_square(black)];
   return h;
   }

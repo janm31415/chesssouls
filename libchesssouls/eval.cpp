@@ -169,7 +169,7 @@ struct evaluation
   int trapped_opening[2];
   int trapped_endgame[2];
   int attack_pattern[2];
-  int pawn_eval[2];
+  int16_t pawn_eval[2]; // type int16_t so that it fits in hash table
   int white_bishops;
   int black_bishops;
   int16_t WhiteKingShield;
@@ -503,12 +503,12 @@ void compute_pawn_scores(const position& pos)
   while (white_pawns)
     {
     e_square s = pop_least_significant_bit(white_pawns);
-    eval_data.pawn_eval[0] += eval_white_pawn(s);
+    eval_data.pawn_eval[0] += (int16_t)eval_white_pawn(s);
     }
   while (black_pawns)
     {
     e_square s = pop_least_significant_bit(black_pawns);
-    eval_data.pawn_eval[1] += eval_black_pawn(s);
+    eval_data.pawn_eval[1] += (int16_t)eval_black_pawn(s);
     }
   }
 
@@ -810,8 +810,17 @@ int eval(const position& pos)
   eval_data.WhiteBonus = 0;
   eval_data.BlackBonus = 0;
 
-  compute_pawn_scores(pos);
-  compute_king_shields(pos);
+  uint64_t pawn_hash = pos.pawn_zobrist_key();
+  uint64_t king_hash = pos.king_zobrist_key();
+  bool pawn_hit = find_in_pawn_table(pawntable, pawn_hash, PR, eval_data.pawn_eval[0], eval_data.pawn_eval[1]);
+  bool king_hit = false;
+
+  if (!pawn_hit)
+    compute_pawn_scores(pos);
+  else
+    king_hit = find_in_king_table(kingtable, king_hash, eval_data.WhiteKingShield, eval_data.BlackKingShield);
+  if (!king_hit)
+    compute_king_shields(pos);
 
   eval_knights(pos);
   eval_bishops(pos);
@@ -847,6 +856,12 @@ int eval(const position& pos)
 
   eval_data.WhiteBonus += eval_data.AttackBlackKingScore + eval_data.pawn_eval[0] + eval_data.WhiteMobilityScore;
   eval_data.BlackBonus += eval_data.AttackWhiteKingScore + eval_data.pawn_eval[1] + eval_data.BlackMobilityScore;
+
+  if (!pawn_hit)
+    store_in_pawn_table(pawntable, pawn_hash, PR, eval_data.pawn_eval[0], eval_data.pawn_eval[1]);
+  if (!king_hit)
+    store_in_king_table(kingtable, king_hash, eval_data.WhiteKingShield, eval_data.BlackKingShield);
+
 
   int score_white = mat_white + pawn_white + pos_white;
   int score_black = mat_black + pawn_black + pos_black;
