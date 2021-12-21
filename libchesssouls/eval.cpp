@@ -26,8 +26,8 @@ namespace
     };
 
   int knight_pcsq_mg[nr_squares] = {
-    -50, -40, -30, -25, -25, -30, -40, -50
-    - 35, -25, -15, -10, -10, -15, -25, -35,
+    -50, -40, -30, -25, -25, -30, -40, -50,
+    -35, -25, -15, -10, -10, -15, -25, -35,
     -20, -10, 0, 5, 5, 0, -10, -20,
     -10, 0, 10, 15, 15, 10, 0, -10,
     -5, 5, 15, 20, 20, 15, 5, -5,
@@ -806,8 +806,8 @@ int eval(const position& pos)
   eval_data.WhiteKingSafety = ((eval_data.WhiteKingShield - eval_data.TropismToWhiteKing) * mat_black_mg) / total_piece_score_opening;
   eval_data.BlackKingSafety = ((eval_data.BlackKingShield - eval_data.TropismToBlackKing) * mat_white_mg) / total_piece_score_opening;
 
-  eval_data.AttackWhiteKingScore = eval_data.attack_value[1] * nr_of_attackers_to_weight[eval_data.attack[1]] / 100;
-  eval_data.AttackBlackKingScore = eval_data.attack_value[0] * nr_of_attackers_to_weight[eval_data.attack[0]] / 100;
+  eval_data.AttackWhiteKingScore = 0;//eval_data.attack_value[1] * nr_of_attackers_to_weight[eval_data.attack[1]] / 100;
+  eval_data.AttackBlackKingScore = 0;//eval_data.attack_value[0] * nr_of_attackers_to_weight[eval_data.attack[0]] / 100;
 
   eval_data.WhiteMobilityScore = (log_table[eval_data.mobility[0]]);
   eval_data.BlackMobilityScore = (log_table[eval_data.mobility[1]]);

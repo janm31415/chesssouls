@@ -19,7 +19,10 @@ LIB_CHESSSOULS_API int eval(const position& pos);
 
 typedef int score;
 
-inline score make_score(int mid_game, int end_game) { return ((uint32_t)end_game << 16) + mid_game; }
+inline score make_score(int mid_game, int end_game) 
+  { 
+  return (int32_t)((uint32_t)end_game << 16) + mid_game; 
+  }
 
 inline int eg_value(score s) 
   {

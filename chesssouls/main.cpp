@@ -174,6 +174,12 @@ int main(int argc, char** argv)
       fflush(stdout);
       continue;
       }
+    if (std::string(command) == std::string("eval"))
+      {
+      print_eval(std::cout, pos);
+      fflush(stdout);
+      continue;
+      }
     if (std::string(command) == std::string("fen"))
       {
       std::cout << pos.fen() << "\n";
@@ -273,6 +279,15 @@ int main(int argc, char** argv)
       if (m != move_none)
         pos.undo_move(m);
       std::cout << pos.pretty();
+      continue;
+      }
+    if (std::string(command) == std::string("testpos"))
+      {
+      bool ok = pos.position_is_ok();
+      if (ok)
+        std::cout << "Position is ok\n";
+      else
+        std::cout << "Position has an error\n";
       continue;
       }
     if (std::string(command) == std::string("st"))

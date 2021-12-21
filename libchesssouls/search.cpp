@@ -13,15 +13,17 @@
 #include <limits>
 #include <algorithm>
 
+#define BETA_FIRST
+
 search_context::search_context()
   {
-  max_depth = 4;
+  max_depth = 10;
   time_limit = std::numeric_limits<int>::max();
   node_limit = std::numeric_limits<uint64_t>::max();
   stop_search = false;
   follow_pv = true;
   ply = 0;
-  use_book = true;  
+  use_book = false;  
   move_step = 1;
   fail_soft = false;
   use_transposition = true;
@@ -30,6 +32,11 @@ search_context::search_context()
   pv_move_ordering_score = 1000000;
   hash_move_ordering_score = 900000;
   winning_capture_move_ordering_score = 800000;
+  promotion_move_ordering_score = 700000;
+  equal_capture_move_ordering_score = 500000;
+  castle_move_score = 400000;
+  losing_capture_move_ordering_score = 200000;
+  history_move_ordering_score = 100000;
   aspiration_window_size = 100;
   aspiration_window_correction = 25;
   null_move_pruning = true;
@@ -38,8 +45,8 @@ search_context::search_context()
   internal_iterative_deepening = true;
   late_move_reduction = true;
   delta_pruning_margin = 500;
-  delta_pruning = true;
-  check_in_quiesce = true;
+  delta_pruning = true;  
+  max_history_ply = 10;
   }
 
 namespace
@@ -144,7 +151,7 @@ namespace
 
     move mlist[max_moves];
     move* last;
-    if (ctxt.check_in_quiesce && pos.checkers())
+    if (pos.checkers())
       last = generate<legal>(pos, mlist);
     else
       last = generate<captures>(pos, mlist);
@@ -172,12 +179,12 @@ namespace
           }
         else
           {
-          cap += piece_value_see[type_of(pos.piece_on(to_square(current)))];
+          cap += pos.see(current, 0);
           }
         if (cap < (alpha - ctxt.delta_pruning_margin))
           continue;
         }
-
+      //std::cout << move_to_uci(current) << std::endl;
       pos.do_move(current);
       ++ctxt.ply;
       score = -quiesce(pos, -beta, -alpha, ctxt);
@@ -190,6 +197,10 @@ namespace
         if (score > bestscore)
           bestscore = score;
         }
+#if defined(BETA_FIRST)
+      if (score >= beta)
+        return ctxt.fail_soft ? score : beta;
+#endif
       if (score > alpha)
         {
         /* update the PV */
@@ -197,9 +208,11 @@ namespace
         for (int j = ctxt.ply + 1; j < ctxt.pv[ctxt.ply + 1].nr_of_moves; ++j)
           ctxt.pv[ctxt.ply].moves[j] = ctxt.pv[ctxt.ply + 1].moves[j];
         ctxt.pv[ctxt.ply].nr_of_moves = ctxt.pv[ctxt.ply + 1].nr_of_moves;
-
+#if !defined(BETA_FIRST)
         if (score >= beta)
           return ctxt.fail_soft ? score : beta;
+#endif
+
         alpha = score;
         }
       }
@@ -290,20 +303,29 @@ namespace
     while (!mp.done())
       {
       move current = mp.next();
-      pos.do_move(current);
+      //std::cout << depth << ":  " << move_to_uci(current) << "  a: " << alpha << "  b: " << beta << std::endl;      
+
+      //if (depth == 2 && move_to_uci(current) == std::string("b1c3"))
+      //{
+      //  std::cout << "break\n";
+      //}
+
+      
 
       int reduction = 0;
       ++move_count;
-      if (ctxt.late_move_reduction && move_count > 4 && depth >= 3 && !pos.checkers() && !ctxt.follow_pv && node_type != PV_NODE && ctxt.ply > 2 && !pos.capture_or_promotion(current))
+      if (ctxt.late_move_reduction && move_count > 4 && depth >= 3 && !pos.checkers() && !ctxt.follow_pv && node_type != PV_NODE && ctxt.ply >= 2 && !pos.capture_or_promotion(current))
         {
         if (move_count <= 10)
           ++reduction;
         else
           reduction += 2;
         }
+      
+      pos.do_move(current);
 
       ++ctxt.ply;
-      if ((expected_node_type != PV_NODE && node_type != PV_NODE))
+      if ((expected_node_type != PV_NODE && node_type != PV_NODE) || move_count == 1)
         score = -negamax(pos, -beta, -alpha, depth - reduction - 1, ctxt.null_move_pruning, OPPOSITE(expected_node_type), ctxt);
       else
         {
@@ -323,6 +345,18 @@ namespace
         {
         bestscore = score;
         }
+
+#if defined(BETA_FIRST)
+      if (score >= beta)
+        {
+        if (ctxt.ply <= ctxt.max_history_ply && !pos.capture(current))
+          ctxt.history[from_square(current)][to_square(current)] += depth * depth;
+        if (ctxt.use_transposition)
+          record_hash(pos, depth, beta, BETA_NODE, current);
+        return ctxt.fail_soft ? score : beta;
+        }
+#endif
+
       if (score > alpha)
         {
         best_move = current;
@@ -330,20 +364,22 @@ namespace
         /* this move caused a cutoff, so increase the history
          value so it gets ordered high next time we can
          search it */
-        ctxt.history[from_square(current)][to_square(current)] += depth*depth;
+        if (ctxt.ply <= ctxt.max_history_ply)
+          ctxt.history[from_square(current)][to_square(current)] += depth*depth;
 
         /* update the PV */
         ctxt.pv[ctxt.ply].moves[ctxt.ply] = current;
         for (int j = ctxt.ply + 1; j < ctxt.pv[ctxt.ply + 1].nr_of_moves; ++j)
           ctxt.pv[ctxt.ply].moves[j] = ctxt.pv[ctxt.ply + 1].moves[j];
         ctxt.pv[ctxt.ply].nr_of_moves = ctxt.pv[ctxt.ply + 1].nr_of_moves;
-
+#if !defined(BETA_FIRST)
         if (score >= beta)
-          {
+          {          
           if (ctxt.use_transposition)
             record_hash(pos, depth, beta, BETA_NODE, current);
           return ctxt.fail_soft ? score : beta;
           }
+#endif
         alpha = score;        
         }
 
@@ -387,7 +423,7 @@ void think(position& pos, int output, search_context& ctxt)
   ctxt.main_pv.nr_of_moves = 0;
 
   if (output == 1)
-    std::cout << "ply      nodes  score  pv\n";
+    std::cout << "ply      nodes  score  pv\n";    
 
   ctxt.stop_search = false;
   nodes = 0;

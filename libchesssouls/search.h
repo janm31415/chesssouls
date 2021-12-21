@@ -24,6 +24,11 @@ struct search_context
   int hash_move_ordering_score;
   int pv_move_ordering_score;
   int winning_capture_move_ordering_score;
+  int equal_capture_move_ordering_score;
+  int losing_capture_move_ordering_score;
+  int castle_move_score;
+  int history_move_ordering_score;
+  int promotion_move_ordering_score;
   bool use_aspiration_window;
   int aspiration_window_size;
   int aspiration_window_correction;
@@ -32,8 +37,8 @@ struct search_context
   bool internal_iterative_deepening;
   bool late_move_reduction;
   int delta_pruning_margin;
-  bool delta_pruning;
-  bool check_in_quiesce;
+  bool delta_pruning;  
+  int max_history_ply;
   };
 
 LIB_CHESSSOULS_API void think(position& pos, int output, search_context& ctxt);

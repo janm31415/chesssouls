@@ -1,6 +1,7 @@
 #include "movepick.h"
 #include "position.h"
 #include "search.h"
+#include "eval.h"
 
 move_picker::move_picker(move* first, move* last, const position& pos, search_context& ctxt) :
   _first(first), _last(last), _pos(pos), _current(first), _ctxt(ctxt)
@@ -14,9 +15,31 @@ move_picker::move_picker(move* first, move* last, const position& pos, search_co
     e_square to = to_square(*curr);
     e_piece pc = pos.piece_on(to);
     if (pc != no_piece)
-      _score[curr - _first] = ctxt.winning_capture_move_ordering_score + (pc << 4) - pos.piece_on(from);
+      {
+      int see = pos.see(*curr, 0);
+      if (see > 0)
+        _score[curr - _first] = ctxt.winning_capture_move_ordering_score + see;
+      else if (see == 0)        
+        _score[curr - _first] = ctxt.equal_capture_move_ordering_score + (pc << 4) - pos.piece_on(from);
+      else
+        _score[curr - _first] = ctxt.losing_capture_move_ordering_score + (pc << 4) - pos.piece_on(from);
+      }
+    else if (type_of(*curr) == enpassant)
+      {
+      _score[curr - _first] = ctxt.equal_capture_move_ordering_score + piece_value_see[pawn];
+      }
+    else if (type_of(*curr) == castling)
+      {
+      _score[curr - _first] = ctxt.castle_move_score;
+      }
+    else if (type_of(*curr) == promotion)
+      {
+      _score[curr - _first] = ctxt.promotion_move_ordering_score;
+      }
     else
-      _score[curr - _first] = ctxt.history[from][to];
+      {
+      _score[curr - _first] = ctxt.history_move_ordering_score + /*ctxt.history[from][to] +*/ pos.move_ordering_score(*curr);
+      }
     if (check_pv && *curr == _ctxt.main_pv.moves[_ctxt.ply])
       {
       _ctxt.follow_pv = true;

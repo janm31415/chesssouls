@@ -313,10 +313,10 @@ bitboard position::attackers_to(e_square s, bitboard occ) const
   {
   return  (attacks_from_pawn(s, black) & pieces(white, pawn))
     | (attacks_from_pawn(s, white) & pieces(black, pawn))
-    | (attacks_from<knight>(s)      & pieces(knight))
-    | (attacks_from_rook(s, occ)     & pieces(rook, queen))
-    | (attacks_from_bishop(s, occ)   & pieces(bishop, queen))
-    | (attacks_from<king>(s)        & pieces(king));
+    | (attacks_from<knight>(s) & pieces(knight))
+    | (attacks_from_rook(s, occ) & pieces(rook, queen))
+    | (attacks_from_bishop(s, occ) & pieces(bishop, queen))
+    | (attacks_from<king>(s) & pieces(king));
   }
 
 void position::compute_checkers()
@@ -520,7 +520,7 @@ void position::do_move(move m)
     e_square rfrom, rto;
     do_castling(from, to, rfrom, rto);
     captured = no_piecetype;
-    lazy_pcsq[my_color] += pcsq[my_color][rook][rto] - pcsq[my_color][rook][rfrom];    
+    lazy_pcsq[my_color] += pcsq[my_color][rook][rto] - pcsq[my_color][rook][rfrom];
     hash ^= hash_piece[my_color][rook][rfrom] ^ hash_piece[my_color][rook][rto];
     }
 
@@ -548,7 +548,7 @@ void position::do_move(move m)
     remove_piece(capsq, other_color, captured);
     hash ^= hash_piece[other_color][captured][capsq];
     lazy_pcsq[other_color] -= pcsq[other_color][captured][capsq];
-    
+
     rule50 = 0;
     }
 
@@ -601,6 +601,17 @@ void position::do_move(move m)
   assert((attackers_to(king_square(my_color)) & pieces(other_color)) == 0);
 
   assert(position_is_ok());
+  }
+
+int position::move_ordering_score(move m) const
+  {
+  e_square from = from_square(m);
+  e_square to = to_square(m);
+  e_piece p = piece_on(from);
+  e_piecetype pt = type_of(p);
+  e_color c = color_of(p);
+  int sc = pcsq[c][pt][to]-pcsq[c][pt][from];
+  return mg_value(sc);
   }
 
 move position::last_move() const
@@ -703,7 +714,7 @@ void position::do_null_move()
   ++game_ply;
   ++rule50;
   _side_to_move = ~_side_to_move;
-  
+
   assert(position_is_ok());
   }
 
@@ -840,4 +851,132 @@ int position::repetitions() const
     if (hist_dat[i].hash == hash)
       ++r;
   return r;
+  }
+
+namespace {
+
+  /// next_attacker() is an helper function used by see() to locate the least
+  /// valuable attacker for the side to move, remove the attacker we just found
+  /// from the 'occupied' bitboard and scan for new X-ray attacks behind it.
+
+  template<int Pt>
+  e_piecetype next_attacker(const bitboard* bb, const e_square& to, const bitboard& stmAttackers,
+    bitboard& occupied, bitboard& attackers)
+    {
+    if (stmAttackers & bb[Pt])
+      {
+      bitboard b = stmAttackers & bb[Pt];
+      occupied ^= b & ~(b - 1);
+
+      if (Pt == pawn || Pt == bishop || Pt == queen)
+        attackers |= attacks_from_bishop(to, occupied) & (bb[bishop] | bb[queen]);
+
+      if (Pt == rook || Pt == queen)
+        attackers |= attacks_from_rook(to, occupied) & (bb[rook] | bb[queen]);
+
+      return (e_piecetype)Pt;
+      }
+    return next_attacker<Pt + 1>(bb, to, stmAttackers, occupied, attackers);
+    }
+
+  template<>
+  e_piecetype next_attacker<king>(const bitboard*, const e_square&, const bitboard&, bitboard&, bitboard&)
+    {
+    return king; // No need to update bitboards, it is the last cycle
+    }
+
+  } // namespace
+
+int position::see(move m, int asymmThreshold) const
+  {
+  e_square from, to;
+  bitboard occupied, attackers, stmAttackers;
+  int swapList[32], slIndex = 1;
+  e_piecetype captured;
+  e_color stm;
+
+  assert(is_ok(m));
+
+  from = from_square(m);
+  to = to_square(m);
+  captured = type_of(piece_on(to));
+  occupied = pieces() ^ from;
+
+  // Handle en passant moves
+  if (type_of(m) == enpassant)
+    {
+    e_square capQq = to - pawn_push(side_to_move());
+
+    assert(!captured);
+    assert(type_of(piece_on(capQq)) == pawn);
+
+    // Remove the captured pawn
+    occupied ^= capQq;
+    captured = pawn;
+    }
+  else if (type_of(m) == castling)
+    // Castle moves are implemented as king capturing the rook so cannot be
+    // handled correctly. Simply return 0 that is always the correct value
+    // unless the rook is ends up under attack.
+    return 0;
+
+  // Find all attackers to the destination square, with the moving piece
+  // removed, but possibly an X-ray attacker added behind it.
+  attackers = attackers_to(to, occupied);
+
+  // If the opponent has no attackers we are finished
+  stm = ~color_of(piece_on(from));
+  stmAttackers = attackers & pieces(stm);
+  if (!stmAttackers)
+    return piece_value_see[captured];
+
+  // The destination square is defended, which makes things rather more
+  // difficult to compute. We proceed by building up a "swap list" containing
+  // the material gain or loss at each stop in a sequence of captures to the
+  // destination square, where the sides alternately capture, and always
+  // capture with the least valuable piece. After each capture, we look for
+  // new X-ray attacks from behind the capturing piece.
+  swapList[0] = piece_value_see[captured];
+  captured = type_of(piece_on(from));
+
+  do {
+    assert(slIndex < 32);
+
+    // Add the new entry to the swap list
+    swapList[slIndex] = -swapList[slIndex - 1] + piece_value_see[captured];
+    slIndex++;
+
+    // Locate and remove from 'occupied' the next least valuable attacker
+    captured = next_attacker<pawn>(bb_by_type, to, stmAttackers, occupied, attackers);
+
+    attackers &= occupied; // Remove the just found attacker
+    stm = ~stm;
+    stmAttackers = attackers & pieces(stm);
+
+    if (captured == king)
+      {
+      // Stop before processing a king capture
+      if (stmAttackers)
+        swapList[slIndex++] = queen_value_mg * 16;
+
+      break;
+      }
+
+    } while (stmAttackers);
+
+    // If we are doing asymmetric SEE evaluation and the same side does the first
+    // and the last capture, he loses a tempo and gain must be at least worth
+    // 'asymmThreshold', otherwise we replace the score with a very low value,
+    // before negamaxing.
+    if (asymmThreshold)
+      for (int i = 0; i < slIndex; i += 2)
+        if (swapList[i] < asymmThreshold)
+          swapList[i] = -queen_value_mg * 16;
+
+    // Having built the swap list, we negamax through it to find the best
+    // achievable score from the point of view of the side to move.
+    while (--slIndex)
+      swapList[slIndex - 1] = std::min(-swapList[slIndex], swapList[slIndex - 1]);
+
+    return swapList[0];
   }
