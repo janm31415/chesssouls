@@ -1,6 +1,7 @@
 #include "book.h"
 #include "position.h"
 #include "movegen.h"
+#include "rand.h"
 #include <random>
 #include <vector>
 
@@ -8,7 +9,7 @@ namespace
   {
   std::vector<std::vector<move>> book;
   int max_book_ply = 0;
-  //std::default_random_engine generator;
+  xorshift32 gen;
   std::random_device generator;
   std::uniform_int_distribution<int> distribution(0, 1000);
   }
@@ -215,6 +216,7 @@ void book_load_internal()
 
 void read_book(const std::string& book_filename)
   {
+  gen.seed(generator());
   max_book_ply = 0;
   if (book_filename.empty())
     book_load_internal();
@@ -272,7 +274,7 @@ move book_move(const position& pos)
     }
   if (valid_lines.empty())
     return false;
-  auto r = distribution(generator);
+  auto r = distribution(gen);
   int j = int(r) % int(valid_lines.size());
   move b = book[valid_lines[j]][pos.ply()];
   movelist<legal> it(pos);

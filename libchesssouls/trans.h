@@ -54,3 +54,4 @@ void increase_transposition_age(transposition_table& trans);
 
 LIB_CHESSSOULS_API void init_transposition_table(uint32_t Mb = 64);
 LIB_CHESSSOULS_API void destroy_transposition_table();
+LIB_CHESSSOULS_API void clear_transposition_table();

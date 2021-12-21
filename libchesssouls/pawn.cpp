@@ -75,3 +75,8 @@ void destroy_pawn_table()
   {
   destroy_pawn_table(pawntable);
   }
+
+void clear_pawn_table()
+  {
+  clear_pawn_table(pawntable);
+  }

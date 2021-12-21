@@ -5,6 +5,8 @@
 #include "king.h"
 #include "eval_table.h"
 
+//#define LAZY_EVAL
+
 namespace
   {
   int pawn_pcsq_mg[nr_squares] = {
@@ -884,6 +886,9 @@ int eval(const position& pos)
 
 int eval(const position& pos, int alpha, int beta)
   {
+#ifdef LAZY_EVAL
+  return eval_lazy(pos);
+#else  
   uint64_t eval_hash = pos.compute_evaluation_zobrist_key();
   int32_t eval_white;
   bool eval_hit = find_in_eval_table(evaltable, eval_hash, eval_white);
@@ -903,6 +908,7 @@ int eval(const position& pos, int alpha, int beta)
     store_in_eval_table(evaltable, eval_hash, eval_white);
     }
   return score;
+#endif
   }
 
 void print_eval(std::ostream& str, const position& pos)

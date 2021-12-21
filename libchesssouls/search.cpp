@@ -15,6 +15,12 @@
 
 //#define BETA_FIRST
 
+void clear_killer_moves(search_context& ctxt)
+  {
+  memset(ctxt.killer_moves, 0, sizeof(ctxt.killer_moves));
+  memset(ctxt.killer_mate_moves, 0, sizeof(ctxt.killer_mate_moves));
+  }
+
 search_context::search_context()
   {
   max_depth = 10;
@@ -25,7 +31,7 @@ search_context::search_context()
   ply = 0;
   use_book = true;  
   move_step = 1;
-  fail_soft = true;
+  fail_soft = false;
   use_transposition = true;
   hash_move[0] = 0;
   hash_move[1] = 0;
@@ -47,6 +53,21 @@ search_context::search_context()
   delta_pruning_margin = 500;
   delta_pruning = true;  
   max_history_ply = 10;
+  history_pruning = true;
+  history_threshold = 9830;
+
+  use_mate_killer = false;
+  max_killers = 2;
+  max_mate_killers = 1;
+  killer_mate_move_ordering_score = 950000;
+  killer_move_ordering_score = 600000;
+
+  clear_killer_moves(*this);
+  }
+
+void search_context::clear()
+  {
+  clear_killer_moves(*this);
   }
 
 namespace
@@ -183,8 +204,7 @@ namespace
           }
         if (cap < (alpha - ctxt.delta_pruning_margin))
           continue;
-        }
-      //std::cout << move_to_uci(current) << std::endl;
+        }      
       pos.do_move(current);
       ++ctxt.ply;
       score = -quiesce(pos, -beta, -alpha, ctxt);
@@ -303,14 +323,6 @@ namespace
     while (!mp.done())
       {
       move current = mp.next();
-      //std::cout << depth << ":  " << move_to_uci(current) << "  a: " << alpha << "  b: " << beta << std::endl;      
-
-      //if (depth == 2 && move_to_uci(current) == std::string("b1c3"))
-      //{
-      //  std::cout << "break\n";
-      //}
-
-      
 
       int reduction = 0;
       ++move_count;
@@ -320,6 +332,15 @@ namespace
           ++reduction;
         else
           reduction += 2;
+        }
+      // history pruning
+      if (ctxt.history_pruning && depth >= 3 && node_type != PV_NODE && !pos.checkers() && ctxt.ply >= 2)
+        {
+        if (ctxt.history[from_square(current)][to_square(current)] < ctxt.history_threshold)
+          {
+          if (reduction < 2)
+            ++reduction;
+          }
         }
       
       pos.do_move(current);
@@ -353,6 +374,30 @@ namespace
           ctxt.history[from_square(current)][to_square(current)] += depth * depth;
         if (ctxt.use_transposition)
           record_hash(pos, depth, beta, BETA_NODE, current);
+        if (!pos.capture_or_promotion(current)) // killer heuristic
+          {
+          if (ctxt.use_mate_killer)
+            {
+            if (score >= 9000)
+              {
+              for (int j = ctxt.max_mate_killers - 2; j >= 0; --j)
+                ctxt.killer_mate_moves[ctxt.ply][j + 1] = ctxt.killer_mate_moves[ctxt.ply][j];
+              ctxt.killer_mate_moves[ctxt.ply][0] = current;
+              }
+            else
+              {
+              for (int j = ctxt.max_killers - 2; j >= 0; --j)
+                ctxt.killer_moves[ctxt.ply][j + 1] = ctxt.killer_moves[ctxt.ply][j];
+              ctxt.killer_moves[ctxt.ply][0] = current;
+              }
+            }
+          else
+            {
+            for (int j = ctxt.max_killers - 2; j >= 0; --j)
+              ctxt.killer_moves[ctxt.ply][j + 1] = ctxt.killer_moves[ctxt.ply][j];
+            ctxt.killer_moves[ctxt.ply][0] = current;
+            }
+          }
         return ctxt.fail_soft ? score : beta;
         }
 #endif
@@ -377,6 +422,32 @@ namespace
           {          
           if (ctxt.use_transposition)
             record_hash(pos, depth, beta, BETA_NODE, current);
+
+          if (!pos.capture_or_promotion(current)) // killer heuristic
+            {
+            if (ctxt.use_mate_killer)
+              {
+              if (score >= 9000)
+                {
+                for (int j = ctxt.max_mate_killers - 2; j >= 0; --j)
+                  ctxt.killer_mate_moves[ctxt.ply][j + 1] = ctxt.killer_mate_moves[ctxt.ply][j];
+                ctxt.killer_mate_moves[ctxt.ply][0] = current;
+                }
+              else
+                {
+                for (int j = ctxt.max_killers - 2; j >= 0; --j)
+                  ctxt.killer_moves[ctxt.ply][j + 1] = ctxt.killer_moves[ctxt.ply][j];
+                ctxt.killer_moves[ctxt.ply][0] = current;
+                }
+              }
+            else
+              {
+              for (int j = ctxt.max_killers - 2; j >= 0; --j)
+                ctxt.killer_moves[ctxt.ply][j + 1] = ctxt.killer_moves[ctxt.ply][j];
+              ctxt.killer_moves[ctxt.ply][0] = current;
+              }
+            }
+
           return ctxt.fail_soft ? score : beta;
           }
 #endif

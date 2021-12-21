@@ -1,5 +1,6 @@
 #include "hash.h"
-#include "rkiss.h"
+//#include "rkiss.h"
+#include "rand.h"
 #include <cstdlib>
 
 
@@ -10,7 +11,8 @@ uint64_t hash_ep[nr_squares];
 
 namespace
   {
-  RKISS rk;
+  //RKISS rk;
+  xorshift64star rk;
   }
 
 uint64_t hash_rand()
@@ -18,7 +20,8 @@ uint64_t hash_rand()
   int i;
   uint64_t r = 0;
   for (i = 0; i < 64; ++i)
-    r ^= uint64_t(rk.rand<uint64_t>()) << i;
+    r ^= uint64_t(rk()) << i;
+    //r ^= uint64_t(rk.rand<uint64_t>()) << i;
   return r;
   }
 

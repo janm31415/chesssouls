@@ -1,5 +1,4 @@
 #include "bitboard.h"
-#include "rkiss.h"
 #include <algorithm>
 
 #include <intrin.h>

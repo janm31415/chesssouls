@@ -29,3 +29,4 @@ bool find_in_pawn_table(pawn_table& p, uint64_t hash, uint64_t& pawn_rank, int16
 
 LIB_CHESSSOULS_API void init_pawn_table(uint32_t Mb = 8);
 LIB_CHESSSOULS_API void destroy_pawn_table();
+LIB_CHESSSOULS_API void clear_pawn_table();

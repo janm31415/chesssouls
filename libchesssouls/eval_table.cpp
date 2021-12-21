@@ -69,3 +69,8 @@ void destroy_eval_table()
   {
   destroy_eval_table(evaltable);
   }
+
+void clear_eval_table()
+  {
+  clear_eval_table(evaltable);
+  }

@@ -28,3 +28,4 @@ bool find_in_king_table(king_table& p, uint64_t hash, int16_t& white_king_shield
 
 LIB_CHESSSOULS_API void init_king_table(uint32_t Mb = 8);
 LIB_CHESSSOULS_API void destroy_king_table();
+LIB_CHESSSOULS_API void clear_king_table();

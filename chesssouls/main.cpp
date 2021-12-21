@@ -236,6 +236,11 @@ int main(int argc, char** argv)
       if (!newfen.empty() && newfen.back() == '\n')
         newfen.pop_back();
       pos.set_fen(newfen);
+      clear_transposition_table();
+      clear_pawn_table();
+      clear_eval_table();
+      clear_king_table();      
+      ctxt.clear();
       continue;
       }
     if (std::string(command) == std::string("white"))

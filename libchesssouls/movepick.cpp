@@ -19,10 +19,10 @@ move_picker::move_picker(move* first, move* last, const position& pos, search_co
       int see = pos.see(*curr, 0);
       if (see > 0)
         _score[curr - _first] = ctxt.winning_capture_move_ordering_score + see;
-      else if (see == 0)        
-        _score[curr - _first] = ctxt.equal_capture_move_ordering_score + (pc << 4) - pos.piece_on(from);
+      else if (see == 0)
+        _score[curr - _first] = ctxt.equal_capture_move_ordering_score + pos.move_ordering_score(*curr);//(pc << 4) - pos.piece_on(from);
       else
-        _score[curr - _first] = ctxt.losing_capture_move_ordering_score + (pc << 4) - pos.piece_on(from);
+        _score[curr - _first] = ctxt.losing_capture_move_ordering_score + see;//(pc << 4) - pos.piece_on(from);
       }
     else if (type_of(*curr) == enpassant)
       {
@@ -39,6 +39,24 @@ move_picker::move_picker(move* first, move* last, const position& pos, search_co
     else
       {
       _score[curr - _first] = ctxt.history_move_ordering_score + ctxt.history[from][to];// + pos.move_ordering_score(*curr);
+      // killer moves are quiet moves
+      for (int j = 0; j < ctxt.max_killers; ++j)
+        {
+        if (*curr == ctxt.killer_moves[ctxt.ply][j])
+          {
+          _score[curr - _first] += ctxt.killer_move_ordering_score;
+          }
+        }
+      if (ctxt.use_mate_killer)
+        {
+        for (int j = 0; j < ctxt.max_mate_killers; ++j)
+          {
+          if (*curr == ctxt.killer_mate_moves[ctxt.ply][j])
+            {
+            _score[curr - _first] += ctxt.killer_mate_move_ordering_score;
+            }
+          }
+        }
       }
     if (check_pv && *curr == _ctxt.main_pv.moves[_ctxt.ply])
       {
@@ -64,13 +82,13 @@ bool move_picker::done() const
   }
 
 move move_picker::next()
-  {  
+  {
   move* best_move = _current;
-  int sc = _score[best_move - _first];  
+  int sc = _score[best_move - _first];
   for (move* it = _current + 1; it != _last; ++it)
     {
     if (_score[it - _first] > sc)
-      {      
+      {
       best_move = it;
       sc = _score[best_move - _first];
       }

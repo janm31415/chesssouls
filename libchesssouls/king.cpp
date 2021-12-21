@@ -72,3 +72,8 @@ void destroy_king_table()
   {
   destroy_king_table(kingtable);
   }
+
+void clear_king_table()
+  {
+  clear_king_table(kingtable);
+  }

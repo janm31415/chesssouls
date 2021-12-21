@@ -170,3 +170,8 @@ void destroy_transposition_table()
   {
   destroy_transposition_table(transposition);
   }
+
+void clear_transposition_table()
+  {
+  clear_transposition_table(transposition);
+  }

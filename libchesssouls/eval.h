@@ -55,6 +55,7 @@ enum e_value
   endgame_limit = 2000,
   value_mate = 10000,
   */
+  
   pawn_value_mg = 60,
   pawn_value_eg = 100,
   knight_value_mg = 325,
@@ -67,8 +68,7 @@ enum e_value
   queen_value_eg = 1200,
   midgame_limit = 7500,
   endgame_limit = 2000,
-  value_mate = 10000,
-
+  value_mate = 10000,  
 
   value_max = std::numeric_limits<int>::max(),
   value_min = std::numeric_limits<int>::min(),

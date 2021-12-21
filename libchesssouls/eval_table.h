@@ -27,3 +27,4 @@ bool find_in_eval_table(eval_table& p, uint64_t hash, int32_t& eval_white);
 
 LIB_CHESSSOULS_API void init_eval_table(uint32_t Mb = 64);
 LIB_CHESSSOULS_API void destroy_eval_table();
+LIB_CHESSSOULS_API void clear_eval_table();

@@ -25,6 +25,7 @@ eval.cpp
 eval_table.cpp
 hash.cpp
 king.cpp
+rand.h
 rkiss.h
 movegen.cpp
 movepick.cpp

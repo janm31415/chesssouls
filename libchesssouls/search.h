@@ -7,6 +7,7 @@ class position;
 struct search_context
   {
   LIB_CHESSSOULS_API search_context();
+  LIB_CHESSSOULS_API void clear();
   int ply;
   bool follow_pv;
   int max_depth;
@@ -39,6 +40,15 @@ struct search_context
   int delta_pruning_margin;
   bool delta_pruning;  
   int max_history_ply;
+  bool history_pruning;
+  int history_threshold;
+  int killer_mate_move_ordering_score;
+  int killer_move_ordering_score;
+  bool use_mate_killer;
+  int max_killers;
+  int max_mate_killers;
+  move killer_moves[max_ply][5];
+  move killer_mate_moves[max_ply][5];
   };
 
 LIB_CHESSSOULS_API void think(position& pos, int output, search_context& ctxt);
