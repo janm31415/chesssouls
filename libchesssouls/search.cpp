@@ -53,7 +53,7 @@ search_context::search_context()
   delta_pruning_margin = 500;
   delta_pruning = true;  
   max_history_ply = 10;
-  history_pruning = true;
+  history_pruning = false;
   history_threshold = 9830;
 
   use_mate_killer = false;
@@ -70,11 +70,10 @@ void search_context::clear()
   clear_killer_moves(*this);
   }
 
+int64_t nodes;
+
 namespace
-  {
-  
-  int nodes;
-  
+  {  
 
   std::chrono::time_point<std::chrono::system_clock> start_time;
 

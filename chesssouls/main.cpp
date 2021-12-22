@@ -197,6 +197,11 @@ int main(int argc, char** argv)
       {
       computer_side = black;
       pos.set_fen(fen);
+      clear_transposition_table();
+      clear_pawn_table();
+      clear_eval_table();
+      clear_king_table();
+      ctxt.clear();
       continue;
       }
     if (std::string(command) == std::string("remove"))

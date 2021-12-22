@@ -4,6 +4,8 @@
 
 class position;
 
+extern int64_t nodes;
+
 struct search_context
   {
   LIB_CHESSSOULS_API search_context();

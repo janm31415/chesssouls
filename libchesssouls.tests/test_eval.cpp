@@ -7,6 +7,7 @@
 #include <libchesssouls/position.h>
 #include <libchesssouls/search.h>
 #include <libchesssouls/eval.h>
+#include <libchesssouls/test.h>
 
 #include <iostream>
 
@@ -22,10 +23,18 @@ namespace
     //TEST_EQ(v, 0);
     print_eval(std::cout, pos);
     }
+
+  void test_wac()
+    {
+    //int score = WinAtChess_test();
+    //int score = Kaufman_test();
+    int score = BratkoKopec_test();
+    }
   }
 
 
 void run_all_eval_tests()
   {
-  test_eval_1();
+  //test_eval_1();
+  test_wac();
   }

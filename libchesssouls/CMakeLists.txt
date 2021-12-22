@@ -14,6 +14,7 @@ pawn.h
 perft.h
 position.h
 search.h
+test.h
 trans.h
 types.h
 )
@@ -34,6 +35,7 @@ pawn.cpp
 perft.cpp
 position.cpp
 search.cpp
+test.cpp
 trans.cpp
 )
 

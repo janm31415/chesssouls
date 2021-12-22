@@ -7,6 +7,10 @@
 #include <libchesssouls/position.h>
 #include <libchesssouls/movegen.h>
 #include <libchesssouls/notation.h>
+#include <libchesssouls/search.h>
+#include <libchesssouls/eval_table.h>
+#include <libchesssouls/pawn.h>
+#include <libchesssouls/king.h>
 
 #include <string>
 #include <random>
@@ -124,6 +128,9 @@ void xboard()
       {
       computer_side = black;
       pos.set_fen(fen);
+      clear_pawn_table();
+      clear_eval_table();
+      clear_king_table();
       continue;
       }
     if (std::string(command) == std::string("undo"))
@@ -205,6 +212,9 @@ int main(int argc, char** argv)
   init_bitboards();
   init_hash();
   init_eval();
+  init_eval_table();
+  init_pawn_table();
+  init_king_table();
   read_book("");
   std::string fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
   //std::string fen("4k3/RR6/8/8/8/8/8/4K3 w KQkq - 0 1");
@@ -249,6 +259,9 @@ int main(int argc, char** argv)
       {
       computer_side = color_end;
       pos.set_fen(fen);
+      clear_pawn_table();
+      clear_eval_table();
+      clear_king_table();
       continue;
       }
     if (line == std::string("undo"))
@@ -279,6 +292,8 @@ int main(int argc, char** argv)
       print_result(pos);
       }
     }
-
+  destroy_eval_table();
+  destroy_pawn_table();
+  destroy_king_table();
   return 0;
   }
