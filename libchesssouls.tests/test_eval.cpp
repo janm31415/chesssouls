@@ -28,7 +28,9 @@ namespace
     {
     //int score = WinAtChess_test();
     //int score = Kaufman_test();
-    int score = BratkoKopec_test();
+    //int score = BratkoKopec_test();
+    //int score = CCR_test();
+    int score = silent_but_deadly_test();
     }
   }
 

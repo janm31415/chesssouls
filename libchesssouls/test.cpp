@@ -74,9 +74,44 @@ namespace
           tsq.push_back(to_char(r));
           if (move.find(tsq) == std::string::npos)
             continue;
-          printf("Move %s equals %s\n", move.c_str(), move_to_uci(*moves).c_str());
+          std::cout << "Move " << move << " equals " << move_to_uci(*moves) << std::endl;          
           move = move_to_uci(*moves);
           break;
+          }
+        else // castling
+          {
+          if (move == std::string("O-O"))
+            {
+            std::string s = move_to_uci(*moves);
+            if (s == std::string("e1g1"))
+              {
+              move = s;
+              std::cout << "Move " << move << " equals " << move_to_uci(*moves) << std::endl;
+              break;
+              }
+            if (s == std::string("e8g8"))
+              {
+              move = s;
+              std::cout << "Move " << move << " equals " << move_to_uci(*moves) << std::endl;
+              break;
+              }
+            }
+          if (move == std::string("O-O-O"))
+            {
+            std::string s = move_to_uci(*moves);
+            if (s == std::string("e1c1"))
+              {
+              move = s;
+              std::cout << "Move " << move << " equals " << move_to_uci(*moves) << std::endl;
+              break;
+              }
+            if (s == std::string("e8c8"))
+              {
+              move = s;
+              std::cout << "Move " << move << " equals " << move_to_uci(*moves) << std::endl;
+              break;
+              }
+            }
           }
         }
       }
@@ -154,6 +189,16 @@ int BratkoKopec_test()
   return test_epd("C:/_Dev/chesssouls_orig/Chess/ChessSouls/BK.txt");
   }
 
+int CCR_test()
+  {
+  return test_epd("C:/_Dev/chesssouls_orig/Chess/ChessSouls/CCR.txt");
+  }
+
+int silent_but_deadly_test()
+  {
+  return test_epd("C:/_Dev/chesssouls_orig/Chess/ChessSouls/silent.txt");
+  }
+
 int test_epd(const char* filename)
   {
   int score = 0;
@@ -220,7 +265,7 @@ int test_epd(const char* filename)
           ok = false;
           }
         }
-      if (!ok)
+      if (ok)
         {
         res.succeeded = true;
         ++score;

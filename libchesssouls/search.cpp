@@ -57,7 +57,7 @@ search_context::search_context()
   history_threshold = 9830;
 
   use_mate_killer = false;
-  max_killers = 2;
+  max_killers = 0;
   max_mate_killers = 1;
   killer_mate_move_ordering_score = 950000;
   killer_move_ordering_score = 600000;
