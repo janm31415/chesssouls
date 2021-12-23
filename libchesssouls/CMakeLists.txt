@@ -61,4 +61,4 @@ target_include_directories(libchesssouls
 	
 target_link_libraries(libchesssouls
     PRIVATE	
-    )	
+    )

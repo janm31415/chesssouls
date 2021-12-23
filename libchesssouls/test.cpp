@@ -174,30 +174,6 @@ namespace
     }
 
   } // namespace
-int WinAtChess_test()
-  {
-  return test_epd("C:/_Dev/chesssouls_orig/Chess/ChessSouls/WAC.txt");
-  }
-
-int Kaufman_test()
-  {
-  return test_epd("C:/_Dev/chesssouls_orig/Chess/ChessSouls/Kaufman.txt");
-  }
-
-int BratkoKopec_test()
-  {
-  return test_epd("C:/_Dev/chesssouls_orig/Chess/ChessSouls/BK.txt");
-  }
-
-int CCR_test()
-  {
-  return test_epd("C:/_Dev/chesssouls_orig/Chess/ChessSouls/CCR.txt");
-  }
-
-int silent_but_deadly_test()
-  {
-  return test_epd("C:/_Dev/chesssouls_orig/Chess/ChessSouls/silent.txt");
-  }
 
 int test_epd(const char* filename)
   {

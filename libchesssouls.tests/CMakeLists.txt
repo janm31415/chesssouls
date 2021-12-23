@@ -43,3 +43,8 @@ target_link_libraries(libchesssouls.tests
     PRIVATE
     libchesssouls
     )	
+
+if (WIN32)
+add_custom_command(TARGET libchesssouls.tests POST_BUILD 
+   COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/../testsets" "${CMAKE_CURRENT_BINARY_DIR}/testsets")
+endif (WIN32)

@@ -24,13 +24,13 @@ namespace
     print_eval(std::cout, pos);
     }
 
-  void test_wac()
+  void test_epds()
     {
-    //int score = WinAtChess_test();
-    //int score = Kaufman_test();
-    //int score = BratkoKopec_test();
-    //int score = CCR_test();
-    int score = silent_but_deadly_test();
+    //int score = test_epd("testsets/CCR.txt");
+    //int score = test_epd("testsets/WAC.txt");
+    //int score = test_epd("testsets/Kaufman.txt");
+    int score = test_epd("testsets/BK.txt");
+    //int score = test_epd("testsets/silent.txt");
     }
   }
 
@@ -38,5 +38,5 @@ namespace
 void run_all_eval_tests()
   {
   //test_eval_1();
-  test_wac();
+  test_epds();
   }
