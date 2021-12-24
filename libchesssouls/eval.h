@@ -55,7 +55,22 @@ enum e_value
   endgame_limit = 2000,
   value_mate = 10000,
   */
-  
+
+#ifdef USE_PESTO
+  pawn_value_mg = 82,
+  pawn_value_eg = 94,
+  knight_value_mg = 337,
+  knight_value_eg = 281,
+  bishop_value_mg = 365,
+  bishop_value_eg = 297,
+  rook_value_mg = 477,
+  rook_value_eg = 512,
+  queen_value_mg = 1025,
+  queen_value_eg = 936,
+  midgame_limit = 7500,
+  endgame_limit = 2000,
+  value_mate = 10000,
+#else
   pawn_value_mg = 60,
   pawn_value_eg = 100,
   knight_value_mg = 325,
@@ -68,7 +83,8 @@ enum e_value
   queen_value_eg = 1200,
   midgame_limit = 7500,
   endgame_limit = 2000,
-  value_mate = 10000,  
+  value_mate = 10000,
+#endif
 
   value_max = std::numeric_limits<int>::max(),
   value_min = std::numeric_limits<int>::min(),

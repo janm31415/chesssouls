@@ -13,8 +13,6 @@
 #include <limits>
 #include <algorithm>
 
-//#define BETA_FIRST
-
 void clear_killer_moves(search_context& ctxt)
   {
   memset(ctxt.killer_moves, 0, sizeof(ctxt.killer_moves));
@@ -39,6 +37,8 @@ search_context::search_context()
   hash_move_ordering_score = 900000;
   winning_capture_move_ordering_score = 800000;
   promotion_move_ordering_score = 700000;
+  killer_mate_move_ordering_score = 950000;
+  killer_move_ordering_score = 600000;
   equal_capture_move_ordering_score = 500000;
   castle_move_score = 400000;
   losing_capture_move_ordering_score = 200000;
@@ -51,16 +51,20 @@ search_context::search_context()
   internal_iterative_deepening = true;
   late_move_reduction = true;
   delta_pruning_margin = 500;
-  delta_pruning = true;  
+  delta_pruning = true;
   max_history_ply = 10;
   history_pruning = false;
   history_threshold = 9830;
 
+  futility_pruning = true;
+  futility_skip = false;
+  futility_reduction = 1;
+  futility_margin_depth_1 = 200;
+  futility_margin_depth_2 = 600;
+
   use_mate_killer = false;
-  max_killers = 0;
-  max_mate_killers = 1;
-  killer_mate_move_ordering_score = 950000;
-  killer_move_ordering_score = 600000;
+  max_killers = 2;
+  max_mate_killers = 1; 
 
   clear_killer_moves(*this);
   }
@@ -70,7 +74,7 @@ void search_context::clear()
   clear_killer_moves(*this);
   }
 
-int64_t nodes;
+uint64_t nodes;
 
 namespace
   {  
@@ -240,7 +244,7 @@ namespace
 
   int negamax(position& pos, int alpha, int beta, int depth, bool allow_null_move_pruning, int expected_node_type, search_context& ctxt)
     {
-    if (!depth)
+    if (depth<=0)
       {
       return quiesce(pos, alpha, beta, ctxt);
       }
@@ -312,6 +316,17 @@ namespace
         }
       }
 
+#ifdef FUTILITY_PRUNING
+    bool futility_prune = false;
+    int futility_material = 0;
+    int futility_margin = 0;
+    if (ctxt.futility_pruning && depth <= 2 && !pos.checkers() && expected_node_type != PV_NODE && alpha < 9000 && beta < 9000 && alpha > -9000 && beta > -9000)
+      {
+      futility_prune = true;
+      futility_margin = depth == 1 ? ctxt.futility_margin_depth_1 : ctxt.futility_margin_depth_2;
+      }
+#endif
+
     move mlist[max_moves];
     move* last = generate<legal>(pos, mlist);   
     *last = move_none;
@@ -324,6 +339,25 @@ namespace
       move current = mp.next();
 
       int reduction = 0;
+#ifdef FUTILITY_PRUNING
+      if (futility_prune && !pos.checkers() && !pos.capture_or_promotion(current)) // futility pruning
+        {
+        futility_material = eval_lazy(pos);
+        if ((futility_material + futility_margin) <= alpha)
+          {
+          if (ctxt.fail_soft)
+            {
+            if ((futility_material + futility_margin) > bestscore)
+              bestscore = (futility_material + futility_margin);
+            }
+          if (ctxt.futility_skip)
+            {
+            continue;
+            }
+          reduction += ctxt.futility_reduction;
+          }
+        }
+#endif
       ++move_count;
       if (ctxt.late_move_reduction && move_count > 4 && depth >= 3 && !pos.checkers() && !ctxt.follow_pv && node_type != PV_NODE && ctxt.ply >= 2 && !pos.capture_or_promotion(current))
         {
@@ -333,6 +367,7 @@ namespace
           reduction += 2;
         }
       // history pruning
+#ifdef HISTORY_PRUNING
       if (ctxt.history_pruning && depth >= 3 && node_type != PV_NODE && !pos.checkers() && ctxt.ply >= 2)
         {
         if (ctxt.history[from_square(current)][to_square(current)] < ctxt.history_threshold)
@@ -341,6 +376,7 @@ namespace
             ++reduction;
           }
         }
+#endif     
       
       pos.do_move(current);
 
@@ -373,6 +409,7 @@ namespace
           ctxt.history[from_square(current)][to_square(current)] += depth * depth;
         if (ctxt.use_transposition)
           record_hash(pos, depth, beta, BETA_NODE, current);
+#ifdef KILLER_MOVES
         if (!pos.capture_or_promotion(current)) // killer heuristic
           {
           if (ctxt.use_mate_killer)
@@ -397,6 +434,7 @@ namespace
             ctxt.killer_moves[ctxt.ply][0] = current;
             }
           }
+#endif
         return ctxt.fail_soft ? score : beta;
         }
 #endif
@@ -409,7 +447,15 @@ namespace
          value so it gets ordered high next time we can
          search it */
         if (ctxt.ply <= ctxt.max_history_ply)
+          {
           ctxt.history[from_square(current)][to_square(current)] += depth*depth;
+          //if (ctxt.history[from_square(current)][to_square(current)] > 100000)
+          //  {
+          //  for (int i = 0; i < 64; ++i)
+          //    for (int j = 0; j < 64; ++j)
+          //      ctxt.history[i][j] /= 2;
+          //  }
+          }
 
         /* update the PV */
         ctxt.pv[ctxt.ply].moves[ctxt.ply] = current;
@@ -421,7 +467,7 @@ namespace
           {          
           if (ctxt.use_transposition)
             record_hash(pos, depth, beta, BETA_NODE, current);
-
+#ifdef KILLER_MOVES
           if (!pos.capture_or_promotion(current)) // killer heuristic
             {
             if (ctxt.use_mate_killer)
@@ -446,7 +492,7 @@ namespace
               ctxt.killer_moves[ctxt.ply][0] = current;
               }
             }
-
+#endif
           return ctxt.fail_soft ? score : beta;
           }
 #endif
@@ -512,7 +558,7 @@ void think(position& pos, int output, search_context& ctxt)
       break;
     ctxt.follow_pv = true;
     int score = negamax(pos, alpha, beta, d, ctxt.null_move_pruning, PV_NODE, ctxt);
-    if (ctxt.pv[0].nr_of_moves > 0)
+    if (ctxt.pv[0].nr_of_moves > 0 && aspiration_fail_alpha == 0 && aspiration_fail_beta == 0)
       {
       ctxt.main_pv.nr_of_moves = ctxt.pv[0].nr_of_moves;
       for (int j = 0; j < ctxt.main_pv.nr_of_moves; ++j)

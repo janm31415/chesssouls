@@ -40,6 +40,7 @@ move_picker::move_picker(move* first, move* last, const position& pos, search_co
       {
       _score[curr - _first] = ctxt.history_move_ordering_score + ctxt.history[from][to];// + pos.move_ordering_score(*curr);
       // killer moves are quiet moves
+#ifdef KILLER_MOVES
       for (int j = 0; j < ctxt.max_killers; ++j)
         {
         if (*curr == ctxt.killer_moves[ctxt.ply][j])
@@ -57,6 +58,7 @@ move_picker::move_picker(move* first, move* last, const position& pos, search_co
             }
           }
         }
+#endif
       }
     if (check_pv && *curr == _ctxt.main_pv.moves[_ctxt.ply])
       {

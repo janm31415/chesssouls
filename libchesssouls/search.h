@@ -4,7 +4,7 @@
 
 class position;
 
-extern int64_t nodes;
+extern uint64_t nodes;
 
 struct search_context
   {
@@ -20,7 +20,7 @@ struct search_context
   pv_line pv[max_ply]; // principal variation
   pv_line main_pv;
   int move_step; // normally equal to 1, but if you want to handicap the engine, you can skip moves.
-  int history[nr_squares][nr_squares];
+  int32_t history[nr_squares][nr_squares];
   bool fail_soft;
   bool use_transposition;
   uint16_t hash_move[2];
@@ -51,6 +51,11 @@ struct search_context
   int max_mate_killers;
   move killer_moves[max_ply][5];
   move killer_mate_moves[max_ply][5];
+  int futility_margin_depth_1;
+  int futility_margin_depth_2;
+  bool futility_pruning;
+  int futility_reduction;
+  bool futility_skip;
   };
 
 LIB_CHESSSOULS_API void think(position& pos, int output, search_context& ctxt);

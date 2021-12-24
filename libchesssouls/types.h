@@ -2,6 +2,13 @@
 #include <stdint.h>
 #include <cassert>
 
+//#define FUTILITY_PRUNING
+//#define HISTORY_PRUNING
+#define KILLER_MOVES
+//#define USE_PESTO
+//#define LAZY_EVAL
+//#define USE_PESTO
+
 typedef uint64_t bitboard;
 
 /*
