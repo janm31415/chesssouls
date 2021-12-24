@@ -29,7 +29,7 @@ search_context::search_context()
   ply = 0;
   use_book = true;  
   move_step = 1;
-  fail_soft = false;
+  fail_soft = true;
   use_transposition = true;
   hash_move[0] = 0;
   hash_move[1] = 0;
@@ -50,7 +50,7 @@ search_context::search_context()
   use_aspiration_window = true;
   internal_iterative_deepening = true;
   late_move_reduction = true;
-  delta_pruning_margin = 500;
+  delta_pruning_margin = 200;
   delta_pruning = true;
   max_history_ply = 10;
   history_pruning = false;
@@ -60,7 +60,7 @@ search_context::search_context()
   futility_skip = false;
   futility_reduction = 1;
   futility_margin_depth_1 = 200;
-  futility_margin_depth_2 = 600;
+  futility_margin_depth_2 = 500;
 
   use_mate_killer = false;
   max_killers = 2;

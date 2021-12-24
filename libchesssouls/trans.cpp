@@ -175,3 +175,8 @@ void clear_transposition_table()
   {
   clear_transposition_table(transposition);
   }
+
+void increase_transposition_age()
+  {
+  increase_transposition_age(transposition);
+  }

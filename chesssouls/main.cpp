@@ -98,6 +98,7 @@ int main(int argc, char** argv)
     if (pos.side_to_move() == computer_side)
       {
       auto tick = std::chrono::system_clock::now();
+      increase_transposition_age();
       if (maximum_moves <= 1)
         ctxt.time_limit = time_left;
       else
