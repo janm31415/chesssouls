@@ -68,6 +68,7 @@ void xboard()
     fflush(stdout);
     if (pos.side_to_move() == computer_side)
       {
+      increase_transposition_age();
       auto m = generate_move(pos);
       if (m == move_none)
         {

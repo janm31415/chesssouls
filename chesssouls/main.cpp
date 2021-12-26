@@ -30,9 +30,9 @@ namespace
   }
 
 
-move generate_move(position& pos, search_context& ctxt)
+move generate_move(position& pos, search_context& ctxt, int& score)
   {
-  think(pos, 2, ctxt);
+  score = think(pos, 2, ctxt);
   if (ctxt.main_pv.nr_of_moves == 0)
     return move_none;
   return ctxt.main_pv.moves[0];
@@ -109,7 +109,8 @@ int main(int argc, char** argv)
         }
       if (ctxt.time_limit > (maximum_time / maximum_moves) * 2)
         ctxt.time_limit = (maximum_time / maximum_moves) * 2;
-      auto m = generate_move(pos, ctxt);
+      int current_score = 0;
+      auto m = generate_move(pos, ctxt, current_score);
       if (m == move_none)
         {
         std::cout << "(no legal moves)\n";
@@ -119,7 +120,10 @@ int main(int argc, char** argv)
         }
       if (xboard)
         {
-        std::cout << "move " << move_to_uci(m) << "\n";
+        if (current_score < -600)
+          std::cout << "resign\n";
+        else
+          std::cout << "move " << move_to_uci(m) << "\n";
         fflush(stdout);
         }
       if (logging)

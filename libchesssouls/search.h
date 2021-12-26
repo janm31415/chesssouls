@@ -58,4 +58,4 @@ struct search_context
   bool futility_skip;
   };
 
-LIB_CHESSSOULS_API void think(position& pos, int output, search_context& ctxt);
+LIB_CHESSSOULS_API int think(position& pos, int output, search_context& ctxt);

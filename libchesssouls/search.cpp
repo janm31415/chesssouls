@@ -521,8 +521,9 @@ namespace
     } //negamax
   } // namespace
 
-void think(position& pos, int output, search_context& ctxt)
+int think(position& pos, int output, search_context& ctxt)
   {
+  int best_score = 0;
   if (ctxt.use_book)
     {
     move bm = book_move(pos);
@@ -530,7 +531,7 @@ void think(position& pos, int output, search_context& ctxt)
       {
       ctxt.main_pv.moves[0] = bm;
       ctxt.main_pv.nr_of_moves = 1;
-      return;
+      return 0;
       }
     }
 
@@ -560,13 +561,14 @@ void think(position& pos, int output, search_context& ctxt)
     int score = negamax(pos, alpha, beta, d, ctxt.null_move_pruning, PV_NODE, ctxt);
     if (ctxt.pv[0].nr_of_moves > 0 && aspiration_fail_alpha == 0 && aspiration_fail_beta == 0)
       {
+      best_score = score;
       ctxt.main_pv.nr_of_moves = ctxt.pv[0].nr_of_moves;
       for (int j = 0; j < ctxt.main_pv.nr_of_moves; ++j)
         ctxt.main_pv.moves[j] = ctxt.pv[0].moves[j];
       }
     assert(ctxt.ply == 0);
     if (ctxt.stop_search)
-      return;
+      return best_score;
     if (output == 1)
       {
       std::cout << std::setw(3) << d << "  " << std::setw(9) << nodes << "  " << std::setw(5) << score << " ";
@@ -607,5 +609,5 @@ void think(position& pos, int output, search_context& ctxt)
       }
     ++d;
     }
-
+  return best_score;
   }
